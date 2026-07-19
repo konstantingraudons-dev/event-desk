@@ -659,7 +659,7 @@
   <div class="code-box">
     <h1>Event Trader</h1>
     <p class="unter">Zugangscode eingeben, um das Dashboard zu entsperren.</p>
-    <input type="password" id="code-eingabe" placeholder="Zugangscode" autocomplete="off" inputmode="text">
+    <input type="password" id="code-eingabe" placeholder="Zugangscode" autocomplete="off" inputmode="text" autocapitalize="none" autocorrect="off" spellcheck="false">
     <button id="code-knopf" type="button">Entsperren</button>
     <p id="code-fehler" hidden></p>
   </div>
@@ -1530,7 +1530,7 @@
 
   function pruefeCode() {
     var eingabe = document.getElementById("code-eingabe");
-    var code = eingabe.value;
+    var code = eingabe.value.trim();
     if (!code) {
       return;
     }
