@@ -7,19 +7,29 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
 <style>
   :root {
-    --bg: #1A1F22;
-    --bg-panel: #22282b;
-    --bg-panel-2: #262d30;
-    --bg-eingabe: #2b3336;
-    --border: #33393c;
-    --text: #e8e6e1;
-    --text-dim: #9aa39c;
-    --accent: #6B7A3F;
-    --accent-hell: #8aa050;
-    --rot: #d9534f;
-    --orange: #e08a3c;
-    --gelb: #d9c23c;
-    --oliv-grau: #7c8a63;
+    /* Helles Design (Vorgabe Konstantin 17.08.: kein Darkmode) -- alle
+       Text-/Vordergrundfarben unten sind auf hellem Grund WCAG-AA-tauglich
+       (Kontrastverhaeltnis mind. 4.5:1 gegen Weiss). */
+    --bg: #f5f6f1;
+    --bg-panel: #ffffff;
+    --bg-panel-2: #eef0e8;
+    --bg-eingabe: #eef0e8;
+    --border: #d7dbcb;
+    --text: #1e2419;
+    --text-dim: #5b6355;
+    --accent: #3c5a1e;
+    --accent-hell: #4f7a2a;
+    --rot: #a1221b;
+    --orange: #a15c00;
+    --gelb: #6e5711;
+    --oliv-grau: #8f9686;
+    /* Review-Fix V5.5: solide, blassgruene/-rote/-goldene Chip-Fuellungen statt
+       transluzenter rgba()-Reste aus dem alten Darkmode-Schema -- unabhaengig vom
+       jeweiligen Panel-Hintergrund (weiss ODER --bg-panel-2), damit Badge-/Chip-Text
+       ueberall mind. 4.5:1 Kontrast erreicht (siehe Kontrast-Tabelle im Fix-Report). */
+    --long-bg: #e1ead4;
+    --short-bg: #f8dedc;
+    --warnung-bg: #f4ecce;
   }
 
   * { box-sizing: border-box; }
@@ -37,7 +47,7 @@
   h2 { font-size: 1.05rem; color: var(--text); letter-spacing: 0.02em; }
   h3 { font-size: 0.95rem; color: var(--text-dim); }
   p { margin: 0.4em 0; }
-  a { color: var(--accent-hell); }
+  a { color: var(--accent); }
 
   /* ---------- Code-Eingabe-Schirm ---------- */
 
@@ -48,6 +58,9 @@
     justify-content: center;
     padding: 24px;
   }
+
+  #code-schirm[hidden] { display: none !important; }
+  #dashboard[hidden] { display: none !important; }
 
   .code-box {
     width: 100%;
@@ -61,7 +74,7 @@
 
   .code-box h1 {
     font-size: 1.3rem;
-    color: var(--accent-hell);
+    color: var(--accent);
   }
 
   .code-box p.unter {
@@ -128,7 +141,7 @@
   .kopf-titel {
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--accent-hell);
+    color: var(--accent);
   }
 
   .kopf-status {
@@ -188,8 +201,613 @@
 
   .kpi-wert { display: block; font-size: 1.1rem; font-weight: 700; }
   .kpi-nebenwert { font-size: 0.78rem; font-weight: 600; color: var(--text-dim); }
-  .kpi-nebenwert.positiv { color: var(--accent-hell); }
+  .kpi-nebenwert.positiv { color: var(--accent); }
   .kpi-nebenwert.negativ { color: var(--rot); }
+
+  /* ---------- Morgen-Briefing (V9.5, Task V9.4/V9.5): schmaler Klartext-Block
+     zwischen KPI-Leiste und "Heute wichtig", KEINE Karten. */
+  .briefing-block {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin: 0 4px 14px 4px;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .briefing-block-titel {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+
+  /* ---------- Aktien-Tabelle (Herzstueck) ---------- */
+
+  #aktien { border: 1px solid var(--accent); }
+
+  .aktien-tabelle-wrapper { display: none; overflow-x: auto; }
+
+  table.aktien-tabelle { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+  table.aktien-tabelle th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  table.aktien-tabelle th[data-sort] { cursor: pointer; user-select: none; }
+  table.aktien-tabelle th[data-sort]:hover { color: var(--text); }
+  table.aktien-tabelle th.sortiert-aktiv { color: var(--accent); }
+
+  table.aktien-tabelle td { padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: middle; }
+
+  tr.zeile-position { border-left: 3px solid var(--accent); background: rgba(107, 122, 63, 0.08); }
+  tr.zeile-beobachtung { opacity: 0.72; }
+
+  .ticker-name { display: block; font-size: 0.72rem; color: var(--text-dim); }
+  .sektor-zelle { color: var(--text-dim); font-size: 0.78rem; }
+  .kurs-gross { font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
+  .tag-veraenderung { font-weight: 600; white-space: nowrap; }
+  .ausloeser-zelle { color: var(--text-dim); font-size: 0.78rem; max-width: 220px; }
+
+  .signal-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .signal-badge.long { background: var(--long-bg); color: var(--accent); }
+  .signal-badge.short { background: var(--short-bg); color: var(--rot); }
+  .signal-badge.beob { background: var(--bg-eingabe); color: var(--text-dim); }
+
+  .staerke-punkte { margin-left: 4px; font-size: 0.7rem; letter-spacing: 1px; color: var(--text-dim); }
+
+  .aktien-karten { display: flex; flex-direction: column; gap: 8px; }
+
+  @media (min-width: 700px) {
+    .aktien-tabelle-wrapper { display: block; }
+    .aktien-karten { display: none; }
+  }
+
+  .aktien-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .aktien-karte.zeile-position { border-left: 3px solid var(--accent); }
+  .aktien-karte.zeile-beobachtung { opacity: 0.72; }
+
+  .aktien-karte-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .aktien-karte-kurs { font-size: 1.35rem; font-weight: 700; }
+  .aktien-karte-tag { font-size: 0.85rem; font-weight: 600; margin-top: 2px; }
+  .aktien-karte-ausloeser { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+  .aktien-karte-technik { margin-top: 6px; }
+
+  /* ---------- Technik-Badge (V5.5) ---------- */
+
+  .technik-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+
+  .technik-badge.long { background: var(--long-bg); color: var(--accent); }
+  .technik-badge.short { background: var(--short-bg); color: var(--rot); }
+  .technik-badge.neutral { background: var(--bg-eingabe); color: var(--text-dim); }
+
+  tr.aktien-zeile { cursor: pointer; }
+
+  /* ---------- Analyse-Panel (V5.5, Klartext statt Balken) ---------- */
+
+  tr.analyse-panel-zeile td { padding: 0; border-bottom: 1px solid var(--border); }
+
+  .analyse-panel {
+    background: var(--bg-panel-2);
+  }
+
+  .analyse-panel-innen {
+    padding: 14px 16px;
+  }
+
+  .analyse-panel-leer { color: var(--text-dim); font-size: 0.85rem; }
+
+  .analyse-chart-wrapper { margin-bottom: 12px; }
+
+  /* Werkzeugleiste ueber dem Chart: Zeitrahmen-Knoepfe + Zoom (V10, Nutzer-Wunsch
+     "Zeitrahmen einstellbar, zoomen, sliden, Preis beim Hovern ganz genau") */
+  .chart-werkzeuge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .chart-zeit-knopf, .chart-zoom-knopf {
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1.3;
+  }
+  .chart-zeit-knopf.aktiv {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .chart-zoom-knopf { min-width: 30px; }
+  .chart-werkzeuge-trenner { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+  .chart-hinweis { font-size: 0.7rem; color: var(--text-dim); margin-left: auto; }
+
+  /* Zeichenflaeche: feste Hoehe, damit Panel-Hoehenmessung stimmt; touch-action
+     pan-y laesst die Seite vertikal scrollen, horizontale Zieh-Gesten sliden den Chart */
+  .chart-flaeche {
+    position: relative;
+    height: 240px;
+    touch-action: pan-y;
+    cursor: crosshair;
+  }
+  .chart-flaeche.wird-gezogen { cursor: grabbing; }
+
+  svg.analyse-chart-svg { width: 100%; height: 100%; display: block; user-select: none; }
+
+  .chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    display: none;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 0.78rem;
+    box-shadow: 0 2px 10px rgba(30, 36, 25, 0.16);
+    z-index: 5;
+    white-space: nowrap;
+  }
+  .chart-tooltip .tt-datum { font-weight: 600; margin-bottom: 3px; }
+  .chart-tooltip .tt-zeile { display: flex; justify-content: space-between; gap: 12px; }
+  .chart-tooltip .tt-serie { color: var(--text-dim); display: inline-flex; align-items: center; gap: 5px; }
+  .chart-tooltip .tt-strich { display: inline-block; width: 10px; border-top: 2px solid; }
+  .chart-tooltip .tt-wert { font-weight: 700; }
+
+  .analyse-chart-legende {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  .legende-eintrag { display: inline-flex; align-items: center; gap: 5px; }
+
+  .legende-strich { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+  .legende-flaeche { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+
+  .analyse-abschnitt { margin-top: 12px; }
+  .analyse-abschnitt h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+  }
+
+  .klartext-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  .klartext-zeile.positiv { color: var(--accent); }
+  .klartext-zeile.negativ { color: var(--rot); }
+  .klartext-zeile.neutral { color: var(--text); }
+
+  .gruende-liste { margin: 0; padding-left: 18px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; }
+
+  .analysten-zeile { font-size: 0.85rem; }
+
+  .einstieg-zeile { font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
+
+  /* ---------- Muster-Klartext im Analyse-Panel (V6.5, Task V6.5) ---------- */
+  /* schlichte Text-Liste, KEINE Balken/Grafiken -- nicht belastbare Muster
+     gedimmt (opacity), zeigen aber weiter ihren Hinweis-Satz aus dem Backend. */
+
+  .muster-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  .muster-zeile.nicht-belastbar { opacity: 0.6; }
+
+  /* Lern-Panel (V11 Archiv-Lernen): Klartext-Befunde, nicht belastbare
+     (unter 30 Messungen) gedimmt wie im Muster-Labor */
+  .klartext-zeile.nicht-belastbar { opacity: 0.6; }
+  .lernen-hinweis { color: var(--text-dim); font-size: 0.8rem; margin: 0 0 8px 0; }
+
+  /* Gesamtlage (V13): Klartext-Lagebild + kompakte Sektor-Tabelle */
+  .gesamtlage-tabelle-wrapper { overflow-x: auto; margin-top: 10px; }
+  .gesamtlage-tabelle { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .gesamtlage-tabelle th {
+    text-align: left; color: var(--text-dim); font-weight: 600;
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 4px 10px 4px 0; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .gesamtlage-tabelle td {
+    padding: 4px 10px 4px 0; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .gesamtlage-tabelle .ideen-long { color: var(--accent); font-weight: 700; }
+  .gesamtlage-tabelle .ideen-short { color: var(--rot); font-weight: 700; }
+
+  /* Marktwissen (V13): Denk-Bloecke der Lern-Agenten */
+  #marktwissen-liste h4 {
+    margin: 12px 0 6px 0; font-size: 0.75rem; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;
+  }
+  #marktwissen-liste h4:first-child { margin-top: 0; }
+
+  /* Sektor-Profil im aufgeklappten Thema (V13) */
+  .thema-profil { color: var(--text-dim); font-size: 0.82rem; margin: 0 0 10px 0; }
+
+  /* Tab-Navigation (V16, Nutzer-Wunsch Übersichtlichkeit): klebt oben,
+     gruppiert die Panels in sechs Bereiche; auf dem Handy seitlich scrollbar */
+  .tab-leiste {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    gap: 6px;
+    padding: 10px 2px;
+    margin: 0 0 14px 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-knopf {
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .tab-knopf.aktiv {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  /* Eigene Klasse statt hidden-Attribut: einige Panels (Briefing, Gesamtlage,
+     KI-Trades, Radar, Offene Positionen) verwalten ihr hidden selbst */
+  .tab-verborgen { display: none !important; }
+
+  /* KI-Trades: aufklappbare Begruendung (V16) */
+  .ki-trade-zeile { cursor: pointer; }
+  .ki-begruendung-pfeil { color: var(--text-dim); }
+  .ki-begruendung {
+    background: var(--bg-panel-2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 2px 0 8px 0;
+    font-size: 0.85rem;
+  }
+  .ki-begruendung p { margin: 0 0 5px 0; }
+  .ki-begruendung p:last-child { margin-bottom: 0; }
+
+  /* Depot-Rechner (V15) */
+  .depot-rechner .rechner-zeile { font-size: 0.85rem; display: block; margin-bottom: 6px; }
+  .depot-rechner .rechner-risiko {
+    width: 70px; padding: 3px 6px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg-eingabe); color: var(--text);
+    font: inherit; font-size: 0.85rem;
+  }
+  .depot-rechner .rechner-ergebnis { font-size: 0.85rem; color: var(--text); }
+
+  /* ---------- Live-Ideen (Technik, V5.5) ---------- */
+
+  .technik-ideen-kopf {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .technik-ideen-stand { color: var(--text-dim); font-size: 0.78rem; }
+
+  .technik-ideen-spalten {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  @media (min-width: 700px) {
+    .technik-ideen-spalten { flex-direction: row; }
+    .technik-ideen-spalte { flex: 1; min-width: 0; }
+  }
+
+  .technik-ideen-spalte h3 {
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .technik-ideen-karten {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .technik-idee-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .technik-idee-karte.schwach { opacity: 0.6; }
+
+  .technik-idee-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .technik-idee-ticker .ticker-name { display: inline; margin-left: 6px; }
+  .technik-idee-gruende { font-size: 0.82rem; color: var(--text-dim); margin: 4px 0; padding-left: 16px; }
+  .technik-idee-zeile { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+  .technik-idee-schwach-hinweis { font-size: 0.75rem; color: var(--text-dim); font-style: italic; margin-top: 4px; }
+
+  .quelle-badge-chip {
+    background: var(--bg-eingabe);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-left: auto;
+  }
+
+  /* Kombi-Chip (V9.3, Task V9.3): hervorgehoben, EIGENER Stil (nicht der
+     neutrale .quelle-badge-chip) -- dieselbe accent/long-bg-Farbpaarung wie
+     der bereits AA-gepruefte .heute-wichtig-quelle-chip.kombi (V8.4), damit
+     "kombi" app-weit dieselbe Bedeutung/Farbe traegt. */
+  .kombi-badge-chip {
+    background: var(--long-bg);
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 999px;
+    padding: 1px 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Langfrist-Ideen (V9.5, Task V9.5): Karten wie Live-Ideen
+     (technik-idee-*-Bausteine wiederverwendet), eigener Chip "Langfristig". */
+  .langfrist-badge-chip {
+    background: var(--bg-eingabe);
+    border: 1px solid var(--oliv-grau);
+    color: var(--oliv-grau);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .fundamental-zeile { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* ---------- Ideen-Archiv (V9.5, Task V9.4/V9.5): einklappbares Panel
+     unter den Trades. */
+  .archiv-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .archiv-eintrag {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  .archiv-eintrag.treffer { border-left-color: var(--accent); }
+  .archiv-eintrag.kein-treffer { border-left-color: var(--rot); }
+  .archiv-eintrag.ohne-messung { border-left-color: var(--text-dim); }
+  .archiv-eintrag.vorlaeufig { opacity: 0.65; }
+
+  .archiv-kopf { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+  .archiv-kopf .ticker-name { display: inline; margin-left: 2px; }
+  .archiv-zeit { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; }
+  .archiv-grund { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 2px; }
+
+  .archiv-ausgang { font-size: 0.85rem; font-weight: 600; }
+  .archiv-eintrag.treffer .archiv-ausgang { color: var(--accent); }
+  .archiv-eintrag.kein-treffer .archiv-ausgang { color: var(--rot); }
+  .archiv-eintrag.ohne-messung .archiv-ausgang { color: var(--text-dim); }
+
+  /* ---------- Beobachten (V7.2, Hinweise ohne Handelsempfehlung) ---------- */
+
+  .beobachten-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  @media (min-width: 700px) {
+    .beobachten-liste {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 8px;
+    }
+  }
+
+  .beobachten-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .beobachten-karte:hover { border-color: var(--accent); }
+
+  .beobachten-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+
+  .beobachten-chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: var(--warnung-bg);
+    color: var(--gelb);
+  }
+
+  .neu-badge, .neu-anzahl-badge {
+    display: inline-block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--bg-eingabe);
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .panel-kopf-titel-gruppe { display: flex; align-items: center; gap: 8px; }
+
+  .beobachten-ticker { margin-bottom: 4px; }
+  .beobachten-ticker .ticker-name { display: inline; margin-left: 6px; }
+  .beobachten-hinweis { font-size: 0.85rem; margin-bottom: 4px; }
+  .beobachten-grund { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 4px; }
+  .beobachten-zeit { font-size: 0.72rem; color: var(--text-dim); }
+
+  /* ---------- Paar-Ideen (V6.5, Task V6.3/V6.4, marktneutrale Stat-Arb-Kandidaten) ---------- */
+
+  .paar-ideen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  @media (min-width: 700px) {
+    .paar-ideen-liste {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 8px;
+    }
+  }
+
+  .paar-ideen-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .paar-ideen-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+
+  .paar-ideen-chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: var(--bg-eingabe);
+    color: var(--text-dim);
+  }
+
+  .paar-ideen-text { font-size: 0.85rem; }
+
+  /* ---------- Regionen-Filter (V7.2, Nutzer-Wunsch) ---------- */
+
+  .region-filter-leiste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .region-hinweis { font-size: 0.7rem; color: var(--text-dim); }
+
+  /* ---------- Offene Positionen (kompakt) ---------- */
+
+  .offene-positionen-liste { display: flex; flex-direction: column; gap: 8px; }
+
+  .offene-position-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .offene-position-buch {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .offene-position-ticker { min-width: 60px; }
+  .offene-position-kurse { color: var(--text-dim); }
+  .offene-position-stop { color: var(--text-dim); font-size: 0.78rem; margin-left: auto; }
 
   .panel {
     background: var(--bg-panel);
@@ -231,45 +849,12 @@
   #karte {
     height: 320px;
     border-radius: 8px;
-    background: #10161a;
+    background: var(--bg-panel-2);
     margin-top: 12px;
   }
 
   @media (min-width: 800px) {
     #karte { height: 420px; }
-  }
-
-  /* ---------- Trade-Ideen ---------- */
-
-  .trade-ideen-liste {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .trade-idee-karte {
-    background: var(--bg-panel-2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    padding: 10px 12px;
-    cursor: pointer;
-  }
-
-  .trade-idee-karte:hover, .trade-idee-karte:focus-visible {
-    border-color: var(--accent-hell);
-    outline: none;
-  }
-
-  .trade-idee-text { font-weight: 700; margin-bottom: 4px; font-size: 0.9rem; }
-
-  .trade-idee-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    flex-wrap: wrap;
   }
 
   /* ---------- Filterleiste ---------- */
@@ -400,8 +985,8 @@
     font-weight: 600;
   }
 
-  .beeinflusst-chip.long { background: rgba(107, 122, 63, 0.25); color: var(--accent-hell); }
-  .beeinflusst-chip.short { background: rgba(217, 83, 79, 0.2); color: var(--rot); }
+  .beeinflusst-chip.long { background: var(--long-bg); color: var(--accent); }
+  .beeinflusst-chip.short { background: var(--short-bg); color: var(--rot); }
   .beeinflusst-chip.neutral { background: var(--bg-eingabe); color: var(--text-dim); }
 
   .trade-idee-box {
@@ -467,8 +1052,8 @@
     font-weight: 600;
   }
 
-  .richtung.long { background: rgba(107, 122, 63, 0.25); color: var(--accent-hell); }
-  .richtung.short { background: rgba(217, 83, 79, 0.2); color: var(--rot); }
+  .richtung.long { background: var(--long-bg); color: var(--accent); }
+  .richtung.short { background: var(--short-bg); color: var(--rot); }
 
   .staerke { color: var(--text-dim); font-size: 0.78rem; margin-bottom: 4px; }
   .begruendung { color: var(--text); font-size: 0.82rem; line-height: 1.35; }
@@ -501,7 +1086,7 @@
   }
 
   .handelsstopp-badge {
-    background: rgba(217, 83, 79, 0.2);
+    background: var(--short-bg);
     color: var(--rot);
     font-size: 0.72rem;
     font-weight: 700;
@@ -543,10 +1128,10 @@
 
   table.positionen-tabelle td {
     padding: 5px 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
   }
 
-  .positiv { color: var(--accent-hell); font-weight: 600; }
+  .positiv { color: var(--accent); font-weight: 600; }
   .negativ { color: var(--rot); font-weight: 600; }
 
   /* ---------- Trades ---------- */
@@ -593,8 +1178,8 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
-    background: rgba(107, 122, 63, 0.25);
-    color: var(--accent-hell);
+    background: var(--long-bg);
+    color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.02em;
   }
@@ -613,7 +1198,7 @@
     gap: 10px;
     font-size: 0.85rem;
     padding: 6px 4px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
   }
 
   .quelle-name { flex: 1 1 auto; }
@@ -625,7 +1210,7 @@
     width: 36px;
     height: 20px;
     border-radius: 10px;
-    background: #454d50;
+    background: #c9ccc0;
     flex: 0 0 auto;
     cursor: default;
     transition: background 0.15s ease;
@@ -647,9 +1232,329 @@
 
   .apple-toggle.an .apple-toggle-kugel { left: 18px; }
 
+  /* ---------- Selbstdiagnose-Ampel (V4.4) ---------- */
+
+  .ampel-kachel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+  }
+
+  .ampel-kachel:hover { border-color: var(--accent); }
+
+  .ampel-punkt {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .ampel-punkt.gruen { background: var(--accent-hell); }
+  .ampel-punkt.gelb { background: var(--gelb); }
+  .ampel-punkt.rot { background: var(--rot); }
+
+  /* ---------- Heute wichtig + Radar (V8.4) ---------- */
+
+  .heute-wichtig-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .heute-wichtig-zeile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .heute-wichtig-zeile:hover { border-color: var(--accent); }
+
+  .heute-wichtig-nummer { font-weight: 700; color: var(--text-dim); flex: 0 0 auto; min-width: 1.4em; }
+
+  .heute-wichtig-inhalt { flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+  .heute-wichtig-kopf { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .heute-wichtig-kopf .ticker-name { display: inline; margin-left: 2px; }
+
+  .heute-wichtig-grund { font-size: 0.85rem; color: var(--text-dim); }
+
+  .heute-wichtig-kurs { font-weight: 700; flex: 0 0 auto; }
+
+  .heute-wichtig-quelle-chip {
+    background: var(--bg-eingabe);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .heute-wichtig-quelle-chip.kombi {
+    background: var(--long-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .radar-leiste {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin: 12px 0;
+  }
+
+  /* Review-Fix V8.4: die obige display:flex-Regel ueberstimmt sonst die
+     UA-Default-Regel [hidden] { display: none } (Autor-Styles gewinnen immer
+     gegen UA-Styles, unabhaengig von der Spezifitaet) -- ohne diese explizite
+     Ueberschreibung blieb der Sektionskopf ("📡 Radar") samt leerem
+     Chip-Container sichtbar, obwohl renderRadar() bei leerem radar-Array
+     leisteEl.hidden = true setzt. */
+  .radar-leiste[hidden] { display: none; }
+
+  .radar-label { font-weight: 700; font-size: 0.8rem; color: var(--text-dim); flex: 0 0 auto; }
+
+  .radar-chips { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+
+  .radar-chip {
+    font-size: 0.78rem;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    color: var(--text);
+  }
+
+  .radar-chip.hoch { border: 2px solid var(--rot); color: var(--rot); font-weight: 600; }
+  .radar-chip.mittel { border-color: var(--oliv-grau); }
+
+  /* Risiko-/Konfidenz-Zeilen auf Empfehlungs-/Technik-Idee-Karten (V8.4,
+     Task V8.1/V8.2): reine Klartext-Zeilen, KEINE Balken. */
+
+  .risiko-zeile { font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; }
+  .risiko-stop-zahl { color: var(--rot); font-weight: 700; }
+  .risiko-ziel-zahl { color: var(--accent); font-weight: 700; }
+
+  .konfidenz-zeile {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .konfidenz-zeile.niedrig { background: var(--warnung-bg); color: var(--gelb); }
+  .konfidenz-zeile.hoch { background: var(--long-bg); color: var(--accent); }
+  .konfidenz-zeile.mittel { color: var(--text-dim); }
+
+  /* Earnings-Warnzeile (V9.3, Task V9.3): derselbe Warn-Gelb-Stil wie
+     .konfidenz-zeile.niedrig (Task-Vorgabe), auf Karten UND im Analyse-Panel. */
+  .earnings-warnung-zeile {
+    font-size: 0.8rem;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    background: var(--warnung-bg);
+    color: var(--gelb);
+    font-weight: 600;
+  }
+
+  /* ---------- Empfehlungen (V4.4) ---------- */
+
+  .empfehlungen-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  @media (min-width: 700px) {
+    .empfehlungen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+    }
+  }
+
+  .empfehlung-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .empfehlung-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .empfehlung-ticker { margin-bottom: 6px; }
+  .empfehlung-ticker .ticker-name { display: inline; margin-left: 6px; }
+  .empfehlung-grund { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px; }
+  .empfehlung-zeile { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+  .empfehlung-zeitraum { color: var(--text-dim); }
+  .empfehlung-kurs { font-weight: 700; }
+
+  /* ---------- Themen-Board (V4.4) ---------- */
+
+  .themen-board {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  @media (min-width: 700px) {
+    .themen-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+  }
+
+  .thema-kachel {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .thema-kopf {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .thema-emoji { font-size: 1.2rem; }
+  .thema-label { font-weight: 600; flex: 1 1 auto; }
+
+  .thema-netto-badge {
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .thema-netto-badge.long { background: var(--long-bg); color: var(--accent); }
+  .thema-netto-badge.short { background: var(--short-bg); color: var(--rot); }
+  .thema-netto-badge.neutral { background: var(--bg-eingabe); color: var(--text-dim); }
+
+  .thema-schnitt { font-weight: 600; font-size: 0.85rem; }
+  .thema-anzahl { color: var(--text-dim); font-size: 0.75rem; flex: 1 0 100%; }
+
+  .thema-kopf .akk-pfeil { color: var(--text-dim); transition: transform 0.2s ease; }
+  .thema-kopf.offen .akk-pfeil { transform: rotate(180deg); }
+
+  .thema-koerper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+
+  .thema-inhalt {
+    padding: 4px 12px 12px 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Eigener Scroll-Slider fuer die Mini-Tabelle -- nie die Seite selbst breit
+     machen (Layout-Haertung V7.3) */
+  .thema-tabelle-wrapper { overflow-x: auto; }
+
+  .thema-aktien-tabelle { font-size: 0.8rem; min-width: 340px; }
+
+  .thema-news-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+  }
+
+  .thema-news-zeit { color: var(--text-dim); margin-right: 6px; }
+
+  /* ---------- Selbstdiagnose-Panel (V4.4) ---------- */
+
+  .selbstbefund-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .selbstbefund-zeile {
+    display: flex;
+    gap: 10px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--oliv-grau);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .selbstbefund-zeile.ok { border-left-color: var(--accent-hell); }
+  .selbstbefund-zeile.info { border-left-color: var(--oliv-grau); }
+  .selbstbefund-zeile.warnung { border-left-color: var(--gelb); }
+  .selbstbefund-zeile.kritisch { border-left-color: var(--rot); }
+
+  .selbstbefund-schwere-badge {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .selbstbefund-schwere-badge.ok { background: var(--long-bg); color: var(--accent); }
+  .selbstbefund-schwere-badge.info { background: var(--bg-eingabe); color: var(--text-dim); }
+  .selbstbefund-schwere-badge.warnung { background: var(--warnung-bg); color: var(--gelb); }
+  .selbstbefund-schwere-badge.kritisch { background: var(--short-bg); color: var(--rot); }
+
+  .selbstbefund-inhalt {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+
   .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: #22282b;
-    color: #e8e6e1;
+    background: #ffffff;
+    color: #1e2419;
   }
 </style>
 </head>
@@ -679,43 +1584,190 @@
 
   <div class="kpi-leiste" id="kpi-leiste">
     <div class="kpi-kachel">
-      <span class="kpi-label">Events 24 Std</span>
-      <span class="kpi-wert" id="kpi-events-24h">–</span>
+      <span class="kpi-label">Depot gesamt</span>
+      <span class="kpi-wert" id="kpi-depot-gesamt">–</span>
+      <span class="kpi-nebenwert" id="kpi-depot-pnl">–</span>
+    </div>
+    <div class="kpi-kachel">
+      <span class="kpi-label">Offene Positionen</span>
+      <span class="kpi-wert" id="kpi-offene-positionen">–</span>
     </div>
     <div class="kpi-kachel">
       <span class="kpi-label">Aktive Signale</span>
       <span class="kpi-wert" id="kpi-signale-aktiv">–</span>
     </div>
     <div class="kpi-kachel">
-      <span class="kpi-label">Depot gesamt</span>
-      <span class="kpi-wert" id="kpi-depot-gesamt">–</span>
-      <span class="kpi-nebenwert" id="kpi-depot-pnl">–</span>
-    </div>
-    <div class="kpi-kachel">
       <span class="kpi-label">Quellen grün</span>
       <span class="kpi-wert" id="kpi-quellen-status">–</span>
     </div>
+    <button type="button" class="kpi-kachel ampel-kachel" id="selbstdiagnose-ampel" aria-expanded="false">
+      <span class="kpi-label">Selbstdiagnose</span>
+      <span class="kpi-wert"><span class="ampel-punkt" id="ampel-punkt"></span><span id="ampel-text">–</span></span>
+    </button>
   </div>
 
-  <section class="panel" id="trade-ideen">
-    <h2>💡 Trade-Ideen</h2>
-    <div id="trade-ideen-liste" class="trade-ideen-liste"></div>
+  <nav class="tab-leiste" id="tab-leiste" aria-label="Bereiche">
+    <button type="button" class="tab-knopf aktiv" data-tab="heute">⭐ Heute</button>
+    <button type="button" class="tab-knopf" data-tab="ideen">💡 Ideen</button>
+    <button type="button" class="tab-knopf" data-tab="aktien">📈 Aktien &amp; Charts</button>
+    <button type="button" class="tab-knopf" data-tab="depot">💼 Depot</button>
+    <button type="button" class="tab-knopf" data-tab="lage">🌍 Lage &amp; News</button>
+    <button type="button" class="tab-knopf" data-tab="wissen">🧠 Wissen</button>
+  </nav>
+
+  <div class="briefing-block" id="briefing-block" hidden>
+    <span class="briefing-block-titel">Morgen-Briefing</span>
+    <p id="briefing-text"></p>
+  </div>
+
+  <section class="panel" id="gesamtlage" hidden>
+    <h2>🧭 Gesamtlage</h2>
+    <div class="klartext-liste" id="gesamtlage-zeilen"></div>
+    <div class="gesamtlage-tabelle-wrapper">
+      <table class="gesamtlage-tabelle">
+        <thead><tr><th>Sektor</th><th>Ideen</th><th>Über 200-Tage-Linie</th><th>3 Monate</th><th>1 Jahr</th></tr></thead>
+        <tbody id="gesamtlage-koerper"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="ki-trades" hidden>
+    <h2>🤖 KI-Trades (Paper)</h2>
+    <div class="klartext-liste" id="ki-trades-bilanz"></div>
+    <div class="gesamtlage-tabelle-wrapper">
+      <table class="gesamtlage-tabelle">
+        <thead><tr><th>Ticker</th><th>Richtung</th><th>Horizont</th><th>Einstieg</th><th>Aktuell</th><th>Laufend</th><th>Stop</th><th>Ziel</th><th aria-label="Begründung aufklappen"></th></tr></thead>
+        <tbody id="ki-trades-koerper" title="Zeile anklicken für die volle Begründung"></tbody>
+      </table>
+    </div>
+    <div class="klartext-liste" id="ki-trades-letzte"></div>
+  </section>
+
+  <section class="panel" id="heute-wichtig">
+    <h2>⭐ Heute wichtig</h2>
+    <div class="heute-wichtig-liste" id="heute-wichtig-liste"></div>
+  </section>
+
+  <div class="radar-leiste" id="radar-leiste" hidden>
+    <span class="radar-label">📡 Radar</span>
+    <div class="radar-chips" id="radar-chips"></div>
+  </div>
+
+  <section class="panel" id="empfehlungen">
+    <h2>💡 Empfehlungen</h2>
+    <div class="empfehlungen-grid" id="empfehlungen-liste"></div>
+  </section>
+
+  <section class="panel" id="technik-ideen">
+    <div class="technik-ideen-kopf">
+      <h2>📐 Live-Ideen (Technik)</h2>
+      <span class="technik-ideen-stand" id="technik-ideen-stand"></span>
+    </div>
+    <div class="technik-ideen-spalten" id="technik-ideen-spalten">
+      <div class="technik-ideen-spalte" data-richtung="long">
+        <h3>Long</h3>
+        <div class="technik-ideen-karten" id="technik-ideen-long"></div>
+      </div>
+      <div class="technik-ideen-spalte" data-richtung="short">
+        <h3>Short</h3>
+        <div class="technik-ideen-karten" id="technik-ideen-short"></div>
+      </div>
+    </div>
+    <p class="leer" id="technik-ideen-leer" hidden>Technik-Analyse startet, Daten folgen.</p>
+  </section>
+
+  <section class="panel" id="paar-ideen">
+    <h2>🔗 Paar-Ideen</h2>
+    <div class="paar-ideen-liste" id="paar-ideen-liste"></div>
+  </section>
+
+  <section class="panel" id="langfrist-ideen">
+    <div class="technik-ideen-kopf">
+      <h2>🌱 Langfrist-Ideen</h2>
+      <span class="technik-ideen-stand" id="langfrist-ideen-stand"></span>
+    </div>
+    <div class="technik-ideen-spalten" id="langfrist-ideen-spalten">
+      <div class="technik-ideen-spalte" data-richtung="long">
+        <h3>Long</h3>
+        <div class="technik-ideen-karten" id="langfrist-ideen-long"></div>
+      </div>
+      <div class="technik-ideen-spalte" data-richtung="short">
+        <h3>Short</h3>
+        <div class="technik-ideen-karten" id="langfrist-ideen-short"></div>
+      </div>
+    </div>
+    <p class="leer" id="langfrist-ideen-leer" hidden>Aktuell kein klares Langfrist-Signal.</p>
+  </section>
+
+  <section class="panel" id="beobachten">
+    <h2>👀 Beobachten</h2>
+    <div class="beobachten-liste" id="beobachten-liste"></div>
+  </section>
+
+  <section class="panel" id="aktien">
+    <h2>📊 Aktien</h2>
+    <div class="region-filter-leiste" id="region-filter-leiste"></div>
+    <div class="aktien-tabelle-wrapper">
+      <table class="aktien-tabelle">
+        <thead>
+          <tr id="aktien-tabelle-kopfzeile">
+            <th>Aktie</th>
+            <th>Sektor</th>
+            <th data-sort="kurs">Kurs</th>
+            <th data-sort="veraenderung_prozent">Tag %</th>
+            <th>Signal</th>
+            <th>Technik</th>
+            <th>Einstand</th>
+            <th data-sort="pnl_prozent">P&amp;L %</th>
+            <th>Auslöser</th>
+          </tr>
+        </thead>
+        <tbody id="aktien-tabelle-koerper"></tbody>
+      </table>
+    </div>
+    <div class="aktien-karten" id="aktien-karten"></div>
+  </section>
+
+  <section class="panel" id="themen">
+    <h2>🗂️ Themen</h2>
+    <div class="themen-board" id="themen-board"></div>
+  </section>
+
+  <section class="panel" id="selbstdiagnose">
+    <div class="panel-kopf-klickbar" id="selbstdiagnose-kopf">
+      <h2>🩺 Selbstdiagnose</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="selbstdiagnose-koerper">
+      <div id="selbstbefund-liste" class="selbstbefund-liste"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="offene-positionen" hidden>
+    <h2>Offene Positionen</h2>
+    <div id="offene-positionen-liste" class="offene-positionen-liste"></div>
   </section>
 
   <section class="panel" id="ereignisse">
-    <h2>📰 News</h2>
-    <div class="filter-leiste" id="filter-leiste">
-      <button type="button" class="filter-chip aktiv" id="filter-schwere-ab4" data-schwere-filter="ab4">Ab Schwere 4</button>
-      <button type="button" class="filter-chip" id="filter-schwere-alle" data-schwere-filter="alle">Alle</button>
-      <span class="filter-trenner" aria-hidden="true"></span>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-naturkatastrophe" data-kategorie="naturkatastrophe">🌋 Naturkatastrophe</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-luftfahrt" data-kategorie="luftfahrt">✈️ Luftfahrt</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-schifffahrt" data-kategorie="schifffahrt">🚢 Schifffahrt</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-geopolitik" data-kategorie="geopolitik">🪖 Geopolitik</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-osint" data-kategorie="osint">📰 OSINT</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-ki" data-kategorie="ki">🤖 KI</button>
+    <div class="panel-kopf-klickbar" id="ereignisse-kopf">
+      <div class="panel-kopf-titel-gruppe"><h2>📰 News</h2>
+        <span class="neu-anzahl-badge" id="ereignisse-neu-anzahl" hidden></span></div>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
     </div>
-    <div id="ereignis-liste" class="akkordeon-liste"></div>
+    <div class="klappbar-koerper" id="ereignisse-koerper">
+      <div class="filter-leiste" id="filter-leiste">
+        <button type="button" class="filter-chip aktiv" id="filter-schwere-ab4" data-schwere-filter="ab4">Ab Schwere 4</button>
+        <button type="button" class="filter-chip" id="filter-schwere-alle" data-schwere-filter="alle">Alle</button>
+        <span class="filter-trenner" aria-hidden="true"></span>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-naturkatastrophe" data-kategorie="naturkatastrophe">🌋 Naturkatastrophe</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-luftfahrt" data-kategorie="luftfahrt">✈️ Luftfahrt</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-schifffahrt" data-kategorie="schifffahrt">🚢 Schifffahrt</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-geopolitik" data-kategorie="geopolitik">🪖 Geopolitik</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-osint" data-kategorie="osint">📰 OSINT</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-ki" data-kategorie="ki">🤖 KI</button>
+      </div>
+      <div id="ereignis-liste" class="akkordeon-liste"></div>
+    </div>
   </section>
 
   <section class="panel" id="karte-panel">
@@ -756,37 +1808,42 @@
   </section>
 
   <section class="panel" id="depot">
-    <h2>Depot</h2>
-    <div class="depot-buecher">
-      <div class="depot-buch" data-buch="kurz">
-        <div class="depot-buch-kopf">
-          <h3>Kurzfristig</h3>
-          <span class="handelsstopp-badge" id="handelsstopp-kurz" hidden>Handelsstopp</span>
+    <div class="panel-kopf-klickbar" id="depot-kopf">
+      <h2>Depot-Details</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="depot-koerper">
+      <div class="depot-buecher">
+        <div class="depot-buch" data-buch="kurz">
+          <div class="depot-buch-kopf">
+            <h3>Kurzfristig</h3>
+            <span class="handelsstopp-badge" id="handelsstopp-kurz" hidden>Handelsstopp</span>
+          </div>
+          <div class="depot-kennzahlen">
+            <div>Equity <strong id="equity-kurz">–</strong></div>
+            <div>Bargeld <strong id="bargeld-kurz">–</strong></div>
+          </div>
+          <canvas class="sparkline" id="sparkline-kurz" width="320" height="60"></canvas>
+          <table class="positionen-tabelle">
+            <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+            <tbody id="positionen-kurz"></tbody>
+          </table>
         </div>
-        <div class="depot-kennzahlen">
-          <div>Equity <strong id="equity-kurz">–</strong></div>
-          <div>Bargeld <strong id="bargeld-kurz">–</strong></div>
+        <div class="depot-buch" data-buch="lang">
+          <div class="depot-buch-kopf">
+            <h3>Langfristig</h3>
+            <span class="handelsstopp-badge" id="handelsstopp-lang" hidden>Handelsstopp</span>
+          </div>
+          <div class="depot-kennzahlen">
+            <div>Equity <strong id="equity-lang">–</strong></div>
+            <div>Bargeld <strong id="bargeld-lang">–</strong></div>
+          </div>
+          <canvas class="sparkline" id="sparkline-lang" width="320" height="60"></canvas>
+          <table class="positionen-tabelle">
+            <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+            <tbody id="positionen-lang"></tbody>
+          </table>
         </div>
-        <canvas class="sparkline" id="sparkline-kurz" width="320" height="60"></canvas>
-        <table class="positionen-tabelle">
-          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
-          <tbody id="positionen-kurz"></tbody>
-        </table>
-      </div>
-      <div class="depot-buch" data-buch="lang">
-        <div class="depot-buch-kopf">
-          <h3>Langfristig</h3>
-          <span class="handelsstopp-badge" id="handelsstopp-lang" hidden>Handelsstopp</span>
-        </div>
-        <div class="depot-kennzahlen">
-          <div>Equity <strong id="equity-lang">–</strong></div>
-          <div>Bargeld <strong id="bargeld-lang">–</strong></div>
-        </div>
-        <canvas class="sparkline" id="sparkline-lang" width="320" height="60"></canvas>
-        <table class="positionen-tabelle">
-          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
-          <tbody id="positionen-lang"></tbody>
-        </table>
       </div>
     </div>
   </section>
@@ -801,9 +1858,45 @@
     </div>
   </section>
 
+  <section class="panel" id="archiv">
+    <div class="panel-kopf-klickbar" id="archiv-kopf">
+      <h2>Ideen-Archiv</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="archiv-koerper">
+      <div class="archiv-liste" id="archiv-liste"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="lernen">
+    <div class="panel-kopf-klickbar" id="lernen-kopf">
+      <h2>Aus dem Archiv gelernt</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="lernen-koerper">
+      <p class="lernen-hinweis" id="lernen-hinweis"></p>
+      <div class="klartext-liste" id="lernen-liste"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="marktwissen">
+    <div class="panel-kopf-klickbar" id="marktwissen-kopf">
+      <h2>Marktwissen</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="marktwissen-koerper">
+      <div id="marktwissen-liste"></div>
+    </div>
+  </section>
+
   <footer class="panel" id="quellen">
-    <h2>Quellen</h2>
-    <div id="quellen-liste"></div>
+    <div class="panel-kopf-klickbar" id="quellen-kopf">
+      <h2>Quellen</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="quellen-koerper">
+      <div id="quellen-liste"></div>
+    </div>
   </footer>
 
 </div>
@@ -812,17 +1905,20 @@
 <script>
 /*
  * WebCrypto-Parameter fuer daten.enc (bindend, muss exakt zu publisher/krypto.py passen):
- *   Paketformat: Magic "EVTR1" (5 Byte, Index 0-4) + Salt (16 Byte, Index 5-21)
+ *   Paketformat: Magic "EVTR2" (5 Byte, Index 0-4) + Salt (16 Byte, Index 5-21)
  *                + Nonce (12 Byte, Index 21-33) + Ciphertext inkl. GCM-Tag (ab Index 33)
  *   Schluesselableitung: PBKDF2-HMAC-SHA256 aus dem Zugangscode, 200000 Iterationen, 32 Byte (256 Bit)
  *   Verschluesselung: AES-256-GCM, IV = Nonce (12 Byte), kein AAD
- *   Klartext: UTF-8-JSON (siehe data.json-Struktur in .superpowers/sdd/s5-constraints.md)
+ *   Klartext: bei "EVTR2" gzip-komprimiertes UTF-8-JSON (Entpacken per DecompressionStream),
+ *             bei "EVTR1" (Altformat, z.B. beispiel-daten.enc) unkomprimiertes UTF-8-JSON
+ *   (Struktur siehe data.json in .superpowers/sdd/s5-constraints.md)
  */
 
 (function () {
   "use strict";
 
-  var MAGIC = [0x45, 0x56, 0x54, 0x52, 0x31]; // "EVTR1"
+  var MAGIC = [0x45, 0x56, 0x54, 0x52, 0x31]; // "EVTR1" (Altformat, unkomprimiert)
+  var MAGIC_V2 = [0x45, 0x56, 0x54, 0x52, 0x32]; // "EVTR2" (gzip-komprimierter Klartext)
   var ITERATIONEN = 200000;
   var SESSION_KEY = "et_zugangscode";
   var AUTO_REFRESH_MS = 60000;
@@ -833,7 +1929,8 @@
     schifffahrt: "🚢",
     geopolitik: "🪖",
     osint: "📰",
-    ki: "🤖"
+    ki: "🤖",
+    wirtschaft: "💼"
   };
 
   var RUBRIKEN_ORDNUNG = [
@@ -848,18 +1945,60 @@
 
   var DEPOT_BASIS_GESAMT = 100000;
 
+  // Farben des hellen Dashboard-Schemas fuer den Inline-SVG-Chart (V5.5) --
+  // dieselben Werte wie die CSS-Variablen --accent/--gelb/--orange/--accent-hell/--text-dim,
+  // als Literale, damit der Chart unabhaengig vom CSS-Parsing-Verhalten von SVG-Attributen ist.
+  var FARBE_SCHLUSS = "#3c5a1e";
+  var FARBE_SMA50 = "#8a6d15";
+  var FARBE_SMA200 = "#a15c00";
+  var FARBE_BOLLINGER = "#4f7a2a";
+  var FARBE_STUETZE = "#5b6355";
+  // Signal-Marker im Chart (Task V7.2, Nutzer-Wunsch): dieselben Werte wie
+  // --accent/--rot/--text, als Literale aus demselben Grund wie oben.
+  var FARBE_SIGNAL_LONG = "#3c5a1e";
+  var FARBE_SIGNAL_SHORT = "#a1221b";
+  var FARBE_SIGNAL_POSITION = "#1e2419";
+  var FARBE_GITTER = "#e4e7dc";
+  var FARBE_ACHSEN_TEXT = "#5b6355";
+  var CHART_HOEHE = 240;
+  // Innenraender der Zeichenflaeche: rechts Platz fuer Kurs-Beschriftung,
+  // unten fuer Datums-Beschriftung
+  var CHART_RAND = { oben: 10, rechts: 58, unten: 20, links: 8 };
+  var CHART_MIN_PUNKTE = 10; // engster Zoom: nie weniger Handelstage im Fenster
+  var CHART_ZEITRAHMEN = [
+    { schluessel: "1m", label: "1M", tage: 21 },
+    { schluessel: "3m", label: "3M", tage: 63 },
+    { schluessel: "6m", label: "6M", tage: 126 },
+    { schluessel: "1j", label: "1J", tage: 250 },
+    { schluessel: "max", label: "Max", tage: null }
+  ];
+  // Je Ticker die Daten fuers interaktive Nachzeichnen (Zoom/Sliden/Hover),
+  // wird bei jedem renderAktien neu befuellt
+  var CHART_KONTEXTE = {};
+
   var gespeicherterCode = null;
   var refreshTimer = null;
   var karteInstanz = null;
   var markerLayer = null;
   var kartePanel = null;
+  var selbstdiagnosePanel = null;
   var aktuelleDaten = null;
 
   // Ansichts-Zustand des Akkordeons/Filters, bleibt ueber Auto-Refreshs erhalten
   var ZUSTAND = {
     offeneEreignisse: new Set(),
     schwereFilter: "ab4",
-    deaktivierteKategorien: new Set()
+    deaktivierteKategorien: new Set(),
+    offeneThemen: new Set(),
+    offeneAnalysePanels: new Set(),
+    regionFilter: "alle",
+    // Chart-Ansicht je Ticker: {zeitrahmen: "6m"} ODER {von, bis} (Index-Fenster
+    // nach Zoom/Sliden); chartZeitrahmen ist der Standard fuer Charts ohne Eintrag
+    chartZeitrahmen: "6m",
+    chartAnsichten: {},
+    // V16: aktiver Bereich der Tab-Navigation, ueberlebt Auto-Refreshs
+    aktiverTab: "heute",
+    offeneKiBegruendungen: new Set()
   };
 
   // ---------- WebCrypto: Entschluesselung nach bindendem Paketformat ----------
@@ -878,13 +2017,26 @@
       });
   }
 
+  // Liefert die Formatversion (1 = "EVTR1", 2 = "EVTR2") oder 0 bei fremder Magic.
   function pruefeMagic(bytes) {
-    for (var i = 0; i < MAGIC.length; i++) {
+    for (var i = 0; i < MAGIC.length - 1; i++) {
       if (bytes[i] !== MAGIC[i]) {
-        return false;
+        return 0;
       }
     }
-    return true;
+    if (bytes[4] === MAGIC[4]) { return 1; }
+    if (bytes[4] === MAGIC_V2[4]) { return 2; }
+    return 0;
+  }
+
+  // EVTR2 traegt den Klartext gzip-komprimiert (Kurshistorie 500 Handelstage je
+  // Aktie waere unkomprimiert ein Mehrfaches); EVTR1 bleibt lesbar (beispiel-daten.enc).
+  function entpackeKlartext(klartextBuffer, version) {
+    if (version === 1) {
+      return Promise.resolve(new TextDecoder("utf-8").decode(klartextBuffer));
+    }
+    var strom = new Response(klartextBuffer).body.pipeThrough(new DecompressionStream("gzip"));
+    return new Response(strom).text();
   }
 
   function entschluesselePaket(paket, code) {
@@ -892,7 +2044,8 @@
     if (bytes.length < 33) {
       return Promise.reject(new Error("Paket zu kurz"));
     }
-    if (!pruefeMagic(bytes)) {
+    var version = pruefeMagic(bytes);
+    if (!version) {
       return Promise.reject(new Error("unbekannte Magic"));
     }
     var salt = bytes.slice(5, 21);
@@ -901,20 +2054,37 @@
     return leiteSchluesselAb(code, salt).then(function (schluessel) {
       return crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce }, schluessel, ciphertext);
     }).then(function (klartextBuffer) {
-      return new TextDecoder("utf-8").decode(klartextBuffer);
+      return entpackeKlartext(klartextBuffer, version);
     });
   }
 
-  function ladeUndEntschluessele(code) {
-    return fetch("daten.enc?t=" + Date.now(), { cache: "no-store" }).then(function (antwort) {
+  // ETag des letzten erfolgreichen Downloads: der Auto-Refresh fragt damit per
+  // If-None-Match nach; antwortet der Server 304 (unveraendert), liefert
+  // ladeUndEntschluessele null und der Aufrufer laesst das Rendern aus. Das
+  // spart bei 60s-Refresh und 5-min-Publish-Takt den Grossteil des Transfers.
+  var letztesEtag = null;
+
+  function ladeUndEntschluessele(code, nutzeEtag) {
+    var kopfzeilen = {};
+    if (nutzeEtag && letztesEtag) {
+      kopfzeilen["If-None-Match"] = letztesEtag;
+    }
+    return fetch("daten.enc?t=" + Date.now(), { cache: "no-store", headers: kopfzeilen }).then(function (antwort) {
+      if (nutzeEtag && antwort.status === 304) {
+        return null;
+      }
       if (!antwort.ok) {
         throw new Error("daten.enc nicht erreichbar (" + antwort.status + ")");
       }
+      letztesEtag = antwort.headers.get("ETag");
       return antwort.arrayBuffer();
     }).then(function (paket) {
-      return entschluesselePaket(paket, code);
-    }).then(function (klartext) {
-      return JSON.parse(klartext);
+      if (paket === null) {
+        return null;
+      }
+      return entschluesselePaket(paket, code).then(function (klartext) {
+        return JSON.parse(klartext);
+      });
     });
   }
 
@@ -989,6 +2159,53 @@
     return richtung === "long" ? "▲" : "▼";
   }
 
+  function waehrungKuerzel(ticker) {
+    // Vereinfachte Ableitung aus dem Ticker-Suffix (S. Task-Brief V3.2: "egal, einfach
+    // Zahl + Kuerzel"): kein Punkt im Ticker (z.B. NVDA) -> Dollar, sonst Euro.
+    return ticker && String(ticker).indexOf(".") !== -1 ? "€" : "$";
+  }
+
+  function formatiereKurs(kurs, ticker) {
+    if (typeof kurs !== "number" || isNaN(kurs)) {
+      return "–";
+    }
+    return kurs.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+      " " + waehrungKuerzel(ticker);
+  }
+
+  function formatiereProzentPfeil(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    var pfeil = wert >= 0 ? "▲" : "▼";
+    return pfeil + " " + (wert >= 0 ? "+" : "") + wert.toFixed(2) + " %";
+  }
+
+  function formatiereProzent(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    return (wert >= 0 ? "+" : "") + wert.toFixed(2) + " %";
+  }
+
+  function prozentKlasse(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "";
+    }
+    return wert >= 0 ? "positiv" : "negativ";
+  }
+
+  function kuerzeText(text, maxLaenge) {
+    if (!text) {
+      return "–";
+    }
+    var text2 = String(text);
+    if (text2.length <= maxLaenge) {
+      return text2;
+    }
+    return text2.slice(0, maxLaenge - 1) + "…";
+  }
+
   // ---------- Rendering ----------
 
   function zeigeDashboard() {
@@ -1030,14 +2247,6 @@
   // ---------- KPI-Kopfzeile ----------
 
   function renderKpis(daten) {
-    var events = daten.events || [];
-    var grenze = Date.now() - 24 * 60 * 60 * 1000;
-    var events24h = events.filter(function (ev) {
-      var zeit = new Date(ev.zeit).getTime();
-      return !isNaN(zeit) && zeit >= grenze;
-    }).length;
-    document.getElementById("kpi-events-24h").textContent = String(events24h);
-
     var rubriken = daten.rubriken || {};
     var signaleAktiv = RUBRIKEN_ORDNUNG.reduce(function (summe, schluessel) {
       return summe + ((rubriken[schluessel] || []).length);
@@ -1052,66 +2261,1532 @@
     pnlEl.textContent = (pnlProzent >= 0 ? "+" : "") + pnlProzent.toFixed(2) + " %";
     pnlEl.className = "kpi-nebenwert " + (pnlProzent >= 0 ? "positiv" : "negativ");
 
+    var offenePositionen = ((depot.kurz || {}).positionen || []).length +
+      ((depot.lang || {}).positionen || []).length;
+    document.getElementById("kpi-offene-positionen").textContent = String(offenePositionen);
+
     var gesundheit = daten.gesundheit || [];
     var gruen = gesundheit.filter(function (q) { return q.ok; }).length;
     document.getElementById("kpi-quellen-status").textContent = gruen + "/" + gesundheit.length;
   }
 
-  // ---------- Trade-Ideen (ganz oben) ----------
+  // ---------- Aktien-Tabelle (Herzstueck, ganz oben) ----------
 
-  function renderTradeIdeen(events) {
-    var container = document.getElementById("trade-ideen-liste");
-    var mitIdee = events.filter(function (ev) {
-      return ev.trade_idee && ev.trade_idee.length > 0;
-    }).sort(function (a, b) {
-      return b.schwere - a.schwere;
-    }).slice(0, 8);
+  var AKTIEN_SORT = { feld: null, aufsteigend: false };
 
-    container.innerHTML = "";
-    if (mitIdee.length === 0) {
-      container.innerHTML = '<p class="leer">Keine aktuellen Trade-Ideen</p>';
+  function sortiereAktien(zeilen) {
+    if (!AKTIEN_SORT.feld) {
+      return zeilen;
+    }
+    var feld = AKTIEN_SORT.feld;
+    var kopie = zeilen.slice();
+    kopie.sort(function (a, b) {
+      var av = a[feld];
+      var bv = b[feld];
+      var aFehlt = typeof av !== "number" || isNaN(av);
+      var bFehlt = typeof bv !== "number" || isNaN(bv);
+      if (aFehlt && bFehlt) { return 0; }
+      if (aFehlt) { return 1; }
+      if (bFehlt) { return -1; }
+      return AKTIEN_SORT.aufsteigend ? av - bv : bv - av;
+    });
+    return kopie;
+  }
+
+  function aktualisiereSortIndikatoren() {
+    var zeile = document.getElementById("aktien-tabelle-kopfzeile");
+    if (!zeile) { return; }
+    zeile.querySelectorAll("th[data-sort]").forEach(function (th) {
+      var aktiv = th.getAttribute("data-sort") === AKTIEN_SORT.feld;
+      th.classList.toggle("sortiert-aktiv", aktiv);
+      var basis = th.textContent.replace(/\s*[▲▼]$/, "");
+      th.textContent = aktiv ? basis + (AKTIEN_SORT.aufsteigend ? " ▲" : " ▼") : basis;
+    });
+  }
+
+  function signalBadgeHtml(zeile) {
+    if (zeile.status === "beobachtung") {
+      return '<span class="signal-badge beob">beob.</span>';
+    }
+    var klasse = zeile.richtung === "long" ? "long" : "short";
+    var punkte = zeile.staerke > 0 ? '<span class="staerke-punkte">' +
+      new Array(zeile.staerke + 1).join("●") + '</span>' : "";
+    return '<span class="signal-badge ' + klasse + '">' + richtungText(zeile.richtung) + '</span>' + punkte;
+  }
+
+  // ---------- Technik-Badge + Analyse-Panel (V5.5, Klartext statt Balken) ----------
+
+  function technikRichtungLabel(richtung) {
+    if (richtung === "long") { return "Long"; }
+    if (richtung === "short") { return "Short"; }
+    return "Neutral";
+  }
+
+  function technikBadgeHtml(technik) {
+    if (!technik || typeof technik.richtung !== "string") {
+      return '<span class="technik-badge neutral">–</span>';
+    }
+    var klasse = technik.richtung === "long" ? "long" : (technik.richtung === "short" ? "short" : "neutral");
+    var punkteText = typeof technik.punkte === "number" && technik.punkte !== 0
+      ? " " + (technik.punkte > 0 ? "+" : "") + technik.punkte
+      : "";
+    return '<span class="technik-badge ' + klasse + '">' + escapeHtml(technikRichtungLabel(technik.richtung) + punkteText) + '</span>';
+  }
+
+  function chartLinienPfad(werte, xSkala, ySkala) {
+    var pfad = "";
+    var neu = true;
+    (werte || []).forEach(function (wert, i) {
+      if (typeof wert !== "number" || isNaN(wert)) {
+        neu = true;
+        return;
+      }
+      pfad += (neu ? "M" : "L") + xSkala(i).toFixed(1) + "," + ySkala(wert).toFixed(1) + " ";
+      neu = false;
+    });
+    return pfad.trim();
+  }
+
+  function bollingerFlaechePfad(bbOben, bbUnten, xSkala, ySkala) {
+    var vorwaerts = [];
+    var rueckwaerts = [];
+    (bbOben || []).forEach(function (oben, i) {
+      var unten = (bbUnten || [])[i];
+      if (typeof oben === "number" && !isNaN(oben) && typeof unten === "number" && !isNaN(unten)) {
+        vorwaerts.push(xSkala(i).toFixed(1) + "," + ySkala(oben).toFixed(1));
+        rueckwaerts.unshift(xSkala(i).toFixed(1) + "," + ySkala(unten).toFixed(1));
+      }
+    });
+    if (vorwaerts.length === 0) {
+      return "";
+    }
+    return "M" + vorwaerts.join(" L") + " L" + rueckwaerts.join(" L") + " Z";
+  }
+
+  function signalMarkerFormHtml(form, x, y, farbe, tooltip) {
+    var titelHtml = "<title>" + tooltip + "</title>";
+    if (form === "dreieck-oben") {
+      var punkteOben = (x - 5) + "," + (y + 4) + " " + (x + 5) + "," + (y + 4) + " " + x + "," + (y - 5);
+      return '<polygon points="' + punkteOben + '" fill="' + farbe + '" stroke="#fff" stroke-width="0.6">' + titelHtml + '</polygon>';
+    }
+    if (form === "dreieck-unten") {
+      var punkteUnten = (x - 5) + "," + (y - 4) + " " + (x + 5) + "," + (y - 4) + " " + x + "," + (y + 5);
+      return '<polygon points="' + punkteUnten + '" fill="' + farbe + '" stroke="#fff" stroke-width="0.6">' + titelHtml + '</polygon>';
+    }
+    var punkteRaute = x + "," + (y - 5) + " " + (x + 5) + "," + y + " " + x + "," + (y + 5) + " " + (x - 5) + "," + y;
+    return '<polygon points="' + punkteRaute + '" fill="' + farbe + '" stroke="#fff" stroke-width="0.6">' + titelHtml + '</polygon>';
+  }
+
+  // Signal-Marker im Analyse-Chart (Task V7.2, Nutzer-Wunsch): je Eintrag aus
+  // `signal_marker` ein kleines Dreieck (long/short) oder eine Raute (offene
+  // Position) am Datum/Kurs des Markers. Marker ausserhalb des sichtbaren
+  // Datumsfensters (Datum nicht im `chart.datum`-Array, z.B. bei altem, ohne
+  // "datum" ausgeliefertem chart_daten) oder ohne numerischen Kurs werden
+  // weggelassen (NaN-sicher); ein Kurs ausserhalb der y-Skala wird an min/max
+  // geklemmt statt den Chart zu sprengen.
+  function signalMarkerTeile(signalMarker, chart, min, max, xSkala, ySkala, ticker) {
+    var datumArr = (chart && chart.datum) || [];
+    var teile = [];
+    (signalMarker || []).forEach(function (marker) {
+      if (!marker || typeof marker.kurs !== "number" || isNaN(marker.kurs)) {
+        return;
+      }
+      var i = datumArr.indexOf(marker.datum);
+      if (i === -1) {
+        return;
+      }
+      var kursGeklemmt = Math.min(max, Math.max(min, marker.kurs));
+      var x = xSkala(i);
+      var y = ySkala(kursGeklemmt);
+      if (typeof x !== "number" || isNaN(x) || typeof y !== "number" || isNaN(y)) {
+        return;
+      }
+      var tooltip = escapeHtml((marker.titel || "") + ", " + (marker.datum || "") + ", " +
+        formatiereKurs(marker.kurs, ticker));
+      if (marker.quelle === "position") {
+        teile.push(signalMarkerFormHtml("raute", x, y, FARBE_SIGNAL_POSITION, tooltip));
+      } else if (marker.richtung === "short") {
+        teile.push(signalMarkerFormHtml("dreieck-unten", x, y, FARBE_SIGNAL_SHORT, tooltip));
+      } else {
+        teile.push(signalMarkerFormHtml("dreieck-oben", x, y, FARBE_SIGNAL_LONG, tooltip));
+      }
+    });
+    return teile.join("");
+  }
+
+  // ---------- Interaktiver Analyse-Chart (V10, Nutzer-Wunsch: Zeitrahmen
+  // einstellbar, zoomen, sliden, exakter Preis beim Hovern) ----------
+
+  function istZahl(wert) {
+    return typeof wert === "number" && !isNaN(wert);
+  }
+
+  function zeitrahmenTage(schluessel) {
+    for (var i = 0; i < CHART_ZEITRAHMEN.length; i++) {
+      if (CHART_ZEITRAHMEN[i].schluessel === schluessel) {
+        return CHART_ZEITRAHMEN[i].tage;
+      }
+    }
+    return null;
+  }
+
+  // Loest die gespeicherte Ansicht eines Tickers ({zeitrahmen} oder {von, bis})
+  // in ein konkretes Index-Fenster ueber n Datenpunkte auf. zeitrahmen ist im
+  // Ergebnis nur gesetzt, wenn das Fenster einem Zeitrahmen-Knopf entspricht.
+  function chartAnsicht(ticker, n) {
+    var eintrag = ZUSTAND.chartAnsichten[ticker];
+    if (eintrag && typeof eintrag.von === "number" && typeof eintrag.bis === "number") {
+      var laenge = Math.min(Math.max(eintrag.bis - eintrag.von, CHART_MIN_PUNKTE - 1), n - 1);
+      var bis = Math.min(Math.max(eintrag.bis, laenge), n - 1);
+      return { von: Math.max(0, bis - laenge), bis: bis, zeitrahmen: null };
+    }
+    var schluessel = (eintrag && eintrag.zeitrahmen) || ZUSTAND.chartZeitrahmen;
+    var tage = zeitrahmenTage(schluessel);
+    if (tage && tage >= n) {
+      // weniger Historie als der Zeitrahmen: zeigt faktisch alles
+      return { von: 0, bis: n - 1, zeitrahmen: schluessel };
+    }
+    return { von: tage ? Math.max(0, n - tage) : 0, bis: n - 1, zeitrahmen: schluessel };
+  }
+
+  // "Schoene" Schrittweite fuer die Kurs-Achse (1/2/2.5/5 x Zehnerpotenz)
+  function schoenerSchritt(spanne, zielTicks) {
+    var roh = spanne / Math.max(1, zielTicks);
+    var zehner = Math.pow(10, Math.floor(Math.log(roh) / Math.LN10));
+    var rest = roh / zehner;
+    var faktor;
+    if (rest <= 1) { faktor = 1; }
+    else if (rest <= 2) { faktor = 2; }
+    else if (rest <= 2.5) { faktor = 2.5; }
+    else if (rest <= 5) { faktor = 5; }
+    else { faktor = 10; }
+    return faktor * zehner;
+  }
+
+  function formatiereAchsenKurs(wert, schritt) {
+    var stellen = schritt >= 1 ? 0 : (schritt >= 0.1 ? 1 : 2);
+    return wert.toLocaleString("de-DE", { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
+  }
+
+  function formatiereChartDatum(iso) {
+    if (!iso || String(iso).length < 10) { return ""; }
+    return iso.slice(8, 10) + "." + iso.slice(5, 7) + "." + iso.slice(2, 4);
+  }
+
+  function formatiereTooltipDatum(iso) {
+    if (!iso || String(iso).length < 10) { return "–"; }
+    return iso.slice(8, 10) + "." + iso.slice(5, 7) + "." + iso.slice(0, 4);
+  }
+
+  function baueChartWerkzeugeHtml(ticker, aktiverZeitrahmen) {
+    var tickerAttr = escapeHtml(ticker);
+    var knoepfe = CHART_ZEITRAHMEN.map(function (zeitrahmen) {
+      var aktiv = zeitrahmen.schluessel === aktiverZeitrahmen ? " aktiv" : "";
+      return '<button type="button" class="chart-zeit-knopf' + aktiv + '" data-ticker="' + tickerAttr +
+        '" data-zeitrahmen="' + zeitrahmen.schluessel + '">' + zeitrahmen.label + '</button>';
+    }).join("");
+    return (
+      '<div class="chart-werkzeuge">' + knoepfe +
+      '<span class="chart-werkzeuge-trenner"></span>' +
+      '<button type="button" class="chart-zoom-knopf" data-ticker="' + tickerAttr + '" data-zoom="raus" aria-label="Herauszoomen">−</button>' +
+      '<button type="button" class="chart-zoom-knopf" data-ticker="' + tickerAttr + '" data-zoom="rein" aria-label="Hineinzoomen">+</button>' +
+      '<span class="chart-hinweis">Ziehen verschiebt, Mausrad oder − / + zoomt</span>' +
+      '</div>'
+    );
+  }
+
+  function baueChartLegendeHtml() {
+    return (
+      '<div class="analyse-chart-legende">' +
+      '<span class="legende-eintrag"><span class="legende-strich" style="background:' + FARBE_SCHLUSS + '"></span>Schlusskurs</span>' +
+      '<span class="legende-eintrag"><span class="legende-strich" style="background:' + FARBE_SMA50 + '"></span>SMA50</span>' +
+      '<span class="legende-eintrag"><span class="legende-strich" style="background:' + FARBE_SMA200 + '"></span>SMA200</span>' +
+      '<span class="legende-eintrag"><span class="legende-flaeche" style="background:' + FARBE_BOLLINGER + ';opacity:0.35"></span>Bollinger-Band</span>' +
+      '<span class="legende-eintrag"><span class="legende-strich" style="background:' + FARBE_STUETZE + '"></span>Unterstützung/Widerstand</span>' +
+      '<span class="legende-eintrag"><span style="color:' + FARBE_SIGNAL_LONG + '">▲</span>' +
+      '<span style="color:' + FARBE_SIGNAL_SHORT + '">▼</span>' +
+      '<span style="color:' + FARBE_SIGNAL_POSITION + '">◆</span> Signale</span>' +
+      '</div>'
+    );
+  }
+
+  // Baut das SVG fuer das sichtbare Fenster [von, bis]. Gibt null zurueck, wenn
+  // im Fenster keine numerischen Werte liegen.
+  function baueChartSvgHtml(kontext, fenster, breite) {
+    var chart = kontext.chart;
+    var von = fenster.von;
+    var bis = fenster.bis;
+    var schluss = (chart.schluss || []).slice(von, bis + 1);
+    var sma50 = (chart.sma50 || []).slice(von, bis + 1);
+    var sma200 = (chart.sma200 || []).slice(von, bis + 1);
+    var bbOben = (chart.bb_oben || []).slice(von, bis + 1);
+    var bbUnten = (chart.bb_unten || []).slice(von, bis + 1);
+    var datum = (chart.datum || []).slice(von, bis + 1);
+
+    var werte = [].concat(schluss, sma50, sma200, bbOben, bbUnten).filter(istZahl);
+    if (werte.length === 0) {
+      return null;
+    }
+    var datenMin = Math.min.apply(null, werte);
+    var datenMax = Math.max.apply(null, werte);
+    var datenSpanne = (datenMax - datenMin) || Math.abs(datenMax) * 0.02 || 1;
+    // Unterstuetzung/Widerstand nur einbeziehen, wenn sie nah genug am
+    // sichtbaren Fenster liegen -- sonst wuerde ein weit entferntes Niveau
+    // beim Hineinzoomen die Kurskurve zu einem Strich plattdruecken.
+    [kontext.unterstuetzung, kontext.widerstand].forEach(function (niveau) {
+      if (istZahl(niveau) && niveau + 0.25 * datenSpanne > datenMin && niveau < datenMax + 0.25 * datenSpanne) {
+        datenMin = Math.min(datenMin, niveau);
+        datenMax = Math.max(datenMax, niveau);
+      }
+    });
+    var polster = ((datenMax - datenMin) || 1) * 0.04;
+    var min = datenMin - polster;
+    var max = datenMax + polster;
+    var spanne = max - min;
+
+    var plotL = CHART_RAND.links;
+    var plotR = breite - CHART_RAND.rechts;
+    var plotT = CHART_RAND.oben;
+    var plotB = CHART_HOEHE - CHART_RAND.unten;
+    var n = schluss.length;
+
+    function xSkala(i) { return plotL + (n > 1 ? (i / (n - 1)) * (plotR - plotL) : (plotR - plotL) / 2); }
+    function ySkala(wert) { return plotT + (1 - (wert - min) / spanne) * (plotB - plotT); }
+
+    var teile = [];
+
+    // Gitterlinien + exakte Kurs-Beschriftung rechts
+    var schritt = schoenerSchritt(spanne, 4);
+    for (var tick = Math.ceil(min / schritt) * schritt; tick <= max + schritt * 1e-6; tick += schritt) {
+      var yTick = ySkala(tick);
+      teile.push('<line x1="' + plotL + '" y1="' + yTick.toFixed(1) + '" x2="' + plotR +
+        '" y2="' + yTick.toFixed(1) + '" stroke="' + FARBE_GITTER + '" stroke-width="1"></line>');
+      teile.push('<text x="' + (plotR + 6) + '" y="' + (yTick + 3.5).toFixed(1) + '" font-size="10.5" fill="' +
+        FARBE_ACHSEN_TEXT + '">' + escapeHtml(formatiereAchsenKurs(tick, schritt)) + '</text>');
+    }
+    // Datums-Beschriftung unten
+    var xTickZiel = breite < 460 ? 3 : 5;
+    var xTickSchritt = Math.max(1, Math.round(n / xTickZiel));
+    for (var xi = Math.floor(xTickSchritt / 2); xi < n; xi += xTickSchritt) {
+      var datumText = formatiereChartDatum(datum[xi]);
+      if (datumText) {
+        teile.push('<text x="' + xSkala(xi).toFixed(1) + '" y="' + (plotB + 14) + '" font-size="10.5" text-anchor="middle" fill="' +
+          FARBE_ACHSEN_TEXT + '">' + escapeHtml(datumText) + '</text>');
+      }
+    }
+
+    var flaechePfad = bollingerFlaechePfad(bbOben, bbUnten, xSkala, ySkala);
+    if (flaechePfad) {
+      teile.push('<path d="' + flaechePfad + '" fill="' + FARBE_BOLLINGER + '" fill-opacity="0.14" stroke="none"></path>');
+    }
+    [kontext.unterstuetzung, kontext.widerstand].forEach(function (niveau) {
+      if (istZahl(niveau) && niveau >= min && niveau <= max) {
+        var yNiveau = ySkala(niveau);
+        teile.push('<line x1="' + plotL + '" y1="' + yNiveau.toFixed(1) + '" x2="' + plotR +
+          '" y2="' + yNiveau.toFixed(1) + '" stroke="' + FARBE_STUETZE + '" stroke-width="1" stroke-dasharray="4 3"></line>');
+      }
+    });
+    var sma200Pfad = chartLinienPfad(sma200, xSkala, ySkala);
+    if (sma200Pfad) {
+      teile.push('<path d="' + sma200Pfad + '" fill="none" stroke="' + FARBE_SMA200 + '" stroke-width="1.4"></path>');
+    }
+    var sma50Pfad = chartLinienPfad(sma50, xSkala, ySkala);
+    if (sma50Pfad) {
+      teile.push('<path d="' + sma50Pfad + '" fill="none" stroke="' + FARBE_SMA50 + '" stroke-width="1.4"></path>');
+    }
+    var schlussPfad = chartLinienPfad(schluss, xSkala, ySkala);
+    teile.push('<path d="' + schlussPfad + '" fill="none" stroke="' + FARBE_SCHLUSS + '" stroke-width="2"></path>');
+
+    var signalTeile = signalMarkerTeile(kontext.signalMarker, { datum: datum }, min, max, xSkala, ySkala, kontext.ticker);
+    if (signalTeile) {
+      teile.push(signalTeile);
+    }
+
+    // Fadenkreuz-Ebene (per pointermove sichtbar, kein Neuzeichnen des Charts)
+    teile.push('<g class="fadenkreuz" style="display:none">' +
+      '<line class="fk-linie" x1="0" x2="0" y1="' + plotT + '" y2="' + plotB +
+      '" stroke="' + FARBE_ACHSEN_TEXT + '" stroke-width="1" stroke-dasharray="3 3"></line>' +
+      '<circle class="fk-punkt" r="3.5" fill="' + FARBE_SCHLUSS + '" stroke="#fff" stroke-width="1.5"></circle>' +
+      '</g>');
+
+    var svg = '<svg class="analyse-chart-svg" viewBox="0 0 ' + breite + " " + CHART_HOEHE +
+      '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Kursverlauf mit gleitenden Durchschnitten, zoombar">' +
+      teile.join("") + '</svg>';
+    return {
+      html: svg + '<div class="chart-tooltip"></div>',
+      meta: {
+        ticker: kontext.ticker, von: von, bis: bis, breite: breite,
+        plotL: plotL, plotR: plotR, plotT: plotT, plotB: plotB, min: min, max: max
+      }
+    };
+  }
+
+  function zeichneChartFlaeche(flaeche) {
+    var ticker = flaeche.getAttribute("data-ticker");
+    var kontext = CHART_KONTEXTE[ticker];
+    if (!kontext) {
       return;
     }
-    mitIdee.forEach(function (ev) {
+    var n = kontext.chart.schluss.length;
+    var fenster = chartAnsicht(ticker, n);
+    var breite = flaeche.clientWidth || 640;
+    var ergebnis = baueChartSvgHtml(kontext, fenster, breite);
+    if (!ergebnis) {
+      flaeche.innerHTML = '<p class="analyse-panel-leer">Keine Chart-Daten verfügbar.</p>';
+      flaeche._chartMeta = null;
+      return;
+    }
+    flaeche.innerHTML = ergebnis.html;
+    flaeche._chartMeta = ergebnis.meta;
+  }
+
+  function zeichneAlleChartFlaechen() {
+    document.querySelectorAll(".chart-flaeche").forEach(zeichneChartFlaeche);
+  }
+
+  function chartFlaechenFuerTicker(ticker) {
+    return document.querySelectorAll('.chart-flaeche[data-ticker="' + CSS.escape(ticker) + '"]');
+  }
+
+  var chartZeichnenGeplant = {};
+
+  // Zeichnet beide Instanzen (Desktop-Panel + Mobil-Karte) eines Tickers neu,
+  // gebuendelt per requestAnimationFrame (Wheel/Drag feuern schneller als 60/s)
+  function zeichneChartFuerTicker(ticker) {
+    if (chartZeichnenGeplant[ticker]) {
+      return;
+    }
+    chartZeichnenGeplant[ticker] = true;
+    requestAnimationFrame(function () {
+      chartZeichnenGeplant[ticker] = false;
+      chartFlaechenFuerTicker(ticker).forEach(zeichneChartFlaeche);
+    });
+  }
+
+  function aktualisiereChartKnoepfe(ticker) {
+    var kontext = CHART_KONTEXTE[ticker];
+    if (!kontext) {
+      return;
+    }
+    var fenster = chartAnsicht(ticker, kontext.chart.schluss.length);
+    document.querySelectorAll('.chart-zeit-knopf[data-ticker="' + CSS.escape(ticker) + '"]').forEach(function (knopf) {
+      knopf.classList.toggle("aktiv", knopf.getAttribute("data-zeitrahmen") === fenster.zeitrahmen);
+    });
+  }
+
+  function setzeChartZeitrahmen(ticker, schluessel) {
+    ZUSTAND.chartAnsichten[ticker] = { zeitrahmen: schluessel };
+    // zuletzt gewaehlter Zeitrahmen wird Standard fuer Charts ohne eigene Wahl
+    ZUSTAND.chartZeitrahmen = schluessel;
+    aktualisiereChartKnoepfe(ticker);
+    zeichneChartFuerTicker(ticker);
+  }
+
+  function setzeChartFenster(ticker, von, bis) {
+    var kontext = CHART_KONTEXTE[ticker];
+    if (!kontext) {
+      return;
+    }
+    var n = kontext.chart.schluss.length;
+    var laenge = Math.min(Math.max(bis - von, CHART_MIN_PUNKTE - 1), n - 1);
+    bis = Math.min(Math.max(von + laenge, laenge), n - 1);
+    von = Math.max(0, bis - laenge);
+    ZUSTAND.chartAnsichten[ticker] = { von: von, bis: bis };
+    aktualisiereChartKnoepfe(ticker);
+    zeichneChartFuerTicker(ticker);
+  }
+
+  function zoomeChart(ticker, faktor, ankerIndex) {
+    var kontext = CHART_KONTEXTE[ticker];
+    if (!kontext) {
+      return;
+    }
+    var n = kontext.chart.schluss.length;
+    var fenster = chartAnsicht(ticker, n);
+    var laenge = fenster.bis - fenster.von;
+    var neueLaenge = Math.min(Math.max(Math.round(laenge * faktor), CHART_MIN_PUNKTE - 1), n - 1);
+    if (neueLaenge === laenge) {
+      return;
+    }
+    var anker = typeof ankerIndex === "number" ? ankerIndex : fenster.von + laenge / 2;
+    var anteil = laenge > 0 ? (anker - fenster.von) / laenge : 0.5;
+    var von = Math.round(anker - anteil * neueLaenge);
+    setzeChartFenster(ticker, von, von + neueLaenge);
+  }
+
+  // ---------- Fadenkreuz + Tooltip (exakter Preis beim Hovern) ----------
+
+  function chartIndexAusEreignis(flaeche, ereignis) {
+    var meta = flaeche._chartMeta;
+    var rect = flaeche.getBoundingClientRect();
+    var x = (ereignis.clientX - rect.left) * (meta.breite / Math.max(1, rect.width));
+    var anteil = (x - meta.plotL) / Math.max(1, meta.plotR - meta.plotL);
+    anteil = Math.min(1, Math.max(0, anteil));
+    return meta.von + Math.round(anteil * (meta.bis - meta.von));
+  }
+
+  function verbergeFadenkreuz(flaeche) {
+    var fadenkreuz = flaeche.querySelector(".fadenkreuz");
+    if (fadenkreuz) {
+      fadenkreuz.style.display = "none";
+    }
+    var tooltip = flaeche.querySelector(".chart-tooltip");
+    if (tooltip) {
+      tooltip.style.display = "none";
+    }
+  }
+
+  function tooltipZeile(farbe, name, wertText) {
+    var zeile = document.createElement("div");
+    zeile.className = "tt-zeile";
+    var serie = document.createElement("span");
+    serie.className = "tt-serie";
+    var strich = document.createElement("span");
+    strich.className = "tt-strich";
+    strich.style.borderTopColor = farbe;
+    serie.appendChild(strich);
+    serie.appendChild(document.createTextNode(name));
+    var wert = document.createElement("span");
+    wert.className = "tt-wert";
+    wert.textContent = wertText;
+    zeile.appendChild(serie);
+    zeile.appendChild(wert);
+    return zeile;
+  }
+
+  function aktualisiereFadenkreuz(flaeche, ereignis) {
+    var meta = flaeche._chartMeta;
+    if (!meta) {
+      return;
+    }
+    var kontext = CHART_KONTEXTE[meta.ticker];
+    if (!kontext) {
+      return;
+    }
+    var chart = kontext.chart;
+    var i = chartIndexAusEreignis(flaeche, ereignis);
+    var fensterSpanne = meta.bis - meta.von;
+    var xSvg = meta.plotL + (fensterSpanne > 0 ? ((i - meta.von) / fensterSpanne) * (meta.plotR - meta.plotL) : (meta.plotR - meta.plotL) / 2);
+
+    var fadenkreuz = flaeche.querySelector(".fadenkreuz");
+    var tooltip = flaeche.querySelector(".chart-tooltip");
+    if (!fadenkreuz || !tooltip) {
+      return;
+    }
+    fadenkreuz.style.display = "";
+    var linie = fadenkreuz.querySelector(".fk-linie");
+    linie.setAttribute("x1", xSvg.toFixed(1));
+    linie.setAttribute("x2", xSvg.toFixed(1));
+    var schluss = (chart.schluss || [])[i];
+    var punkt = fadenkreuz.querySelector(".fk-punkt");
+    if (istZahl(schluss)) {
+      var ySvg = meta.plotT + (1 - (schluss - meta.min) / (meta.max - meta.min)) * (meta.plotB - meta.plotT);
+      punkt.style.display = "";
+      punkt.setAttribute("cx", xSvg.toFixed(1));
+      punkt.setAttribute("cy", ySvg.toFixed(1));
+    } else {
+      punkt.style.display = "none";
+    }
+
+    tooltip.innerHTML = "";
+    var datumZeile = document.createElement("div");
+    datumZeile.className = "tt-datum";
+    datumZeile.textContent = formatiereTooltipDatum((chart.datum || [])[i]);
+    tooltip.appendChild(datumZeile);
+    tooltip.appendChild(tooltipZeile(FARBE_SCHLUSS, "Schluss", formatiereKurs(schluss, meta.ticker)));
+    if (istZahl((chart.sma50 || [])[i])) {
+      tooltip.appendChild(tooltipZeile(FARBE_SMA50, "SMA50", formatiereKurs(chart.sma50[i], meta.ticker)));
+    }
+    if (istZahl((chart.sma200 || [])[i])) {
+      tooltip.appendChild(tooltipZeile(FARBE_SMA200, "SMA200", formatiereKurs(chart.sma200[i], meta.ticker)));
+    }
+    tooltip.style.display = "block";
+
+    var rect = flaeche.getBoundingClientRect();
+    var cursorX = ereignis.clientX - rect.left;
+    var cursorY = ereignis.clientY - rect.top;
+    var links = cursorX + 14;
+    if (links + tooltip.offsetWidth > rect.width - 4) {
+      links = cursorX - tooltip.offsetWidth - 14;
+    }
+    if (links < 4) {
+      links = 4;
+    }
+    var oben = Math.min(Math.max(cursorY - tooltip.offsetHeight / 2, 4), Math.max(4, rect.height - tooltip.offsetHeight - 4));
+    tooltip.style.left = links + "px";
+    tooltip.style.top = oben + "px";
+  }
+
+  // ---------- Chart-Zeigersteuerung: Sliden (Ziehen) + Zoom (Rad/Knoepfe) ----------
+
+  var chartZug = null;
+
+  function chartPointerDown(ereignis) {
+    var flaeche = ereignis.target.closest(".chart-flaeche");
+    if (!flaeche || !flaeche._chartMeta) {
+      return;
+    }
+    if (typeof flaeche.setPointerCapture === "function") {
+      try {
+        flaeche.setPointerCapture(ereignis.pointerId);
+      } catch (ignoriert) {
+        // Capture optional -- Ziehen funktioniert innerhalb der Flaeche trotzdem
+      }
+    }
+    var meta = flaeche._chartMeta;
+    chartZug = {
+      flaeche: flaeche, ticker: meta.ticker, pointerId: ereignis.pointerId,
+      startX: ereignis.clientX, startVon: meta.von, startBis: meta.bis, bewegt: false
+    };
+    flaeche.classList.add("wird-gezogen");
+  }
+
+  function chartPointerMove(ereignis) {
+    if (chartZug && ereignis.pointerId === chartZug.pointerId) {
+      var meta = chartZug.flaeche._chartMeta;
+      if (!meta) {
+        return;
+      }
+      var rect = chartZug.flaeche.getBoundingClientRect();
+      var dxSvg = (ereignis.clientX - chartZug.startX) * (meta.breite / Math.max(1, rect.width));
+      if (Math.abs(dxSvg) > 3) {
+        chartZug.bewegt = true;
+      }
+      if (!chartZug.bewegt) {
+        return;
+      }
+      verbergeFadenkreuz(chartZug.flaeche);
+      var breiteJePunkt = (meta.plotR - meta.plotL) / Math.max(1, chartZug.startBis - chartZug.startVon);
+      var deltaPunkte = Math.round(-dxSvg / breiteJePunkt);
+      setzeChartFenster(chartZug.ticker, chartZug.startVon + deltaPunkte, chartZug.startBis + deltaPunkte);
+      return;
+    }
+    var flaeche = ereignis.target.closest(".chart-flaeche");
+    if (flaeche && flaeche._chartMeta) {
+      aktualisiereFadenkreuz(flaeche, ereignis);
+    }
+  }
+
+  function chartPointerEnde(ereignis) {
+    if (!chartZug || ereignis.pointerId !== chartZug.pointerId) {
+      return;
+    }
+    chartZug.flaeche.classList.remove("wird-gezogen");
+    chartZug = null;
+  }
+
+  function chartPointerRaus(ereignis) {
+    var flaeche = ereignis.target.closest(".chart-flaeche");
+    if (!flaeche) {
+      return;
+    }
+    if (ereignis.relatedTarget && flaeche.contains(ereignis.relatedTarget)) {
+      return;
+    }
+    verbergeFadenkreuz(flaeche);
+  }
+
+  function chartWheel(ereignis) {
+    var flaeche = ereignis.target.closest(".chart-flaeche");
+    if (!flaeche || !flaeche._chartMeta) {
+      return;
+    }
+    ereignis.preventDefault();
+    var faktor = ereignis.deltaY > 0 ? 1.25 : 0.8;
+    zoomeChart(flaeche._chartMeta.ticker, faktor, chartIndexAusEreignis(flaeche, ereignis));
+  }
+
+  function verdrahteChartInteraktion(container) {
+    container.addEventListener("click", function (ereignis) {
+      var zeitKnopf = ereignis.target.closest(".chart-zeit-knopf");
+      if (zeitKnopf) {
+        setzeChartZeitrahmen(zeitKnopf.getAttribute("data-ticker"), zeitKnopf.getAttribute("data-zeitrahmen"));
+        return;
+      }
+      var zoomKnopf = ereignis.target.closest(".chart-zoom-knopf");
+      if (zoomKnopf) {
+        zoomeChart(zoomKnopf.getAttribute("data-ticker"), zoomKnopf.getAttribute("data-zoom") === "rein" ? 0.67 : 1.5, null);
+      }
+    });
+    container.addEventListener("pointerdown", chartPointerDown);
+    container.addEventListener("pointermove", chartPointerMove);
+    container.addEventListener("pointerup", chartPointerEnde);
+    container.addEventListener("pointercancel", chartPointerEnde);
+    container.addEventListener("pointerout", chartPointerRaus);
+    container.addEventListener("wheel", chartWheel, { passive: false });
+  }
+
+  function technikKlartextZeilen(technik) {
+    if (!technik) {
+      return [];
+    }
+    var zeilen = [];
+    if (typeof technik.rsi === "number") {
+      var rsiGerundet = Math.round(technik.rsi);
+      if (technik.rsi < 30) {
+        zeilen.push({ klasse: "positiv",
+          text: "RSI " + rsiGerundet + ": überverkauft, spricht kurzfristig für eine Gegenbewegung nach oben" });
+      } else if (technik.rsi > 70) {
+        zeilen.push({ klasse: "negativ",
+          text: "RSI " + rsiGerundet + ": überkauft, spricht kurzfristig für eine Gegenbewegung nach unten" });
+      } else {
+        zeilen.push({ klasse: "neutral", text: "RSI " + rsiGerundet + ": neutraler Bereich, kein Extremwert" });
+      }
+    }
+    if (technik.trend === "aufwaerts") {
+      zeilen.push({ klasse: "positiv", text: "Trend: Aufwärts, Kurs über der 200-Tage-Linie, 50er-Linie über der 200er" });
+    } else if (technik.trend === "abwaerts") {
+      zeilen.push({ klasse: "negativ", text: "Trend: Abwärts, Kurs unter der 200-Tage-Linie, 50er-Linie unter der 200er" });
+    } else {
+      zeilen.push({ klasse: "neutral", text: "Trend: Seitwärts, keine klare Richtung über die gleitenden Durchschnitte" });
+    }
+    if (typeof technik.punkte === "number") {
+      zeilen.push({
+        klasse: technik.richtung === "long" ? "positiv" : (technik.richtung === "short" ? "negativ" : "neutral"),
+        text: "Bewertung: " + technikRichtungLabel(technik.richtung) + " mit " + technik.punkte +
+          " Punkten (Stärke " + (typeof technik.staerke === "number" ? technik.staerke : 0) + " von 3)"
+      });
+    }
+    return zeilen;
+  }
+
+  function bollingerKlartextZeile(chart) {
+    if (!chart || !chart.schluss || !chart.bb_oben || !chart.bb_unten) {
+      return null;
+    }
+    var n = chart.schluss.length;
+    if (n === 0) {
+      return null;
+    }
+    var letzterKurs = chart.schluss[n - 1];
+    var letzterOben = chart.bb_oben[n - 1];
+    var letzterUnten = chart.bb_unten[n - 1];
+    if (typeof letzterKurs !== "number" || typeof letzterOben !== "number" || typeof letzterUnten !== "number") {
+      return null;
+    }
+    if (letzterKurs > letzterOben) {
+      return { klasse: "negativ", text: "Kurs über dem oberen Bollinger-Band: statistisch überdehnt nach oben" };
+    }
+    if (letzterKurs < letzterUnten) {
+      return { klasse: "positiv", text: "Kurs unter dem unteren Bollinger-Band: statistisch überdehnt nach unten" };
+    }
+    return { klasse: "neutral", text: "Kurs innerhalb des Bollinger-Bands: keine statistische Extremlage" };
+  }
+
+  function analystenKlartext(analysten, ticker) {
+    if (!analysten) {
+      return "Keine Analystendaten";
+    }
+    var waehrung = waehrungKuerzel(ticker);
+    var kurszielText = typeof analysten.kursziel === "number"
+      ? analysten.kursziel.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + waehrung
+      : "unbekannt";
+    var abstand = analysten.kursziel_abstand_prozent;
+    var abstandText = typeof abstand === "number"
+      ? ", " + (abstand >= 0 ? "+" : "") + abstand.toFixed(1) + " % " + (abstand >= 0 ? "über" : "unter") + " aktuellem Kurs"
+      : "";
+    return "Analysten: " + analysten.kauf + " Kaufen, " + analysten.halten + " Halten, " +
+      analysten.verkauf + " Verkaufen. Kursziel " + kurszielText + abstandText;
+  }
+
+  function einstiegKlartext(technik, unterstuetzung, widerstand, ticker) {
+    if (!technik || (technik.richtung !== "long" && technik.richtung !== "short")) {
+      return null;
+    }
+    if (technik.richtung === "long") {
+      return typeof unterstuetzung === "number"
+        ? "Einstieg eher bei Rücksetzer Richtung Unterstützung, Bereich um " + formatiereKurs(unterstuetzung, ticker)
+        : null;
+    }
+    return typeof widerstand === "number"
+      ? "Einstieg eher bei Erholung Richtung Widerstand, Bereich um " + formatiereKurs(widerstand, ticker)
+      : null;
+  }
+
+  // ---------- Muster-Klartext im Analyse-Panel (V6.5, Task V6.1/V6.2/V6.4) ----------
+  // Feste Reihenfolge (Brief: Tagesspanne, Overnight/Intraday, Gaps, Wochentag,
+  // Einstiegsfenster, U-Kurve), unabhaengig von der JSON-Schluesselreihenfolge.
+  // `uhrzeit_profil` liefert `einstieg_text` statt `text` (siehe publisher/daten.py
+  // `_MUSTER_TEXTFELD`), fuer die Anzeige selbst spielt das keine Rolle mehr --
+  // `_muster_zu_dict` hat das Feld bereits vereinheitlicht auf `text`.
+  var MUSTER_REIHENFOLGE = [
+    "atr_steckbrief", "overnight_intraday", "gap_statistik",
+    "wochentag_profil", "uhrzeit_profil", "u_kurve",
+  ];
+
+  function musterKlartextHtml(muster) {
+    if (!muster) {
+      return "";
+    }
+    var zeilenHtml = MUSTER_REIHENFOLGE
+      .filter(function (schluessel) { return !!muster[schluessel]; })
+      .map(function (schluessel) {
+        var eintrag = muster[schluessel];
+        var klasse = eintrag.belastbar ? "muster-zeile" : "muster-zeile nicht-belastbar";
+        return '<div class="' + klasse + '">' + escapeHtml(eintrag.text) + '</div>';
+      })
+      .join("");
+    if (!zeilenHtml) {
+      return "";
+    }
+    return '<div class="analyse-abschnitt"><h4>Muster</h4><div class="muster-liste">' + zeilenHtml + '</div></div>';
+  }
+
+  function baueAnalysePanelInhaltHtml(zeile, chartDatenAlle) {
+    var chart = (chartDatenAlle && chartDatenAlle[zeile.ticker]) || null;
+    var technik = zeile.technik || null;
+    var analysten = zeile.analysten || null;
+    // Unterstützung/Widerstand kommen direkt vom Backend (`trading.technik.
+    // berechne_indikatoren`: min(Low)/max(High) über 60 Tage) statt aus einer
+    // JS-Neuberechnung aus den täglichen Schlusskursen (Review-Fix Finding 4).
+    var unterstuetzung = technik && typeof technik.unterstuetzung === "number" ? technik.unterstuetzung : null;
+    var widerstand = technik && typeof technik.widerstand === "number" ? technik.widerstand : null;
+
+    // Chart wird nach dem DOM-Einfuegen in die .chart-flaeche gezeichnet
+    // (zeichneAlleChartFlaechen), weil die Achsen-Beschriftung die echte
+    // Elementbreite braucht; hier nur Werkzeuge + Flaeche + Legende aufbauen.
+    var chartHtml;
+    if (chart && chart.schluss && chart.schluss.length >= 2) {
+      CHART_KONTEXTE[zeile.ticker] = {
+        ticker: zeile.ticker,
+        chart: chart,
+        unterstuetzung: unterstuetzung,
+        widerstand: widerstand,
+        signalMarker: zeile.signal_marker || []
+      };
+      var fenster = chartAnsicht(zeile.ticker, chart.schluss.length);
+      chartHtml = baueChartWerkzeugeHtml(zeile.ticker, fenster.zeitrahmen) +
+        '<div class="chart-flaeche" data-ticker="' + escapeHtml(zeile.ticker) + '"></div>' +
+        baueChartLegendeHtml();
+    } else {
+      chartHtml = '<p class="analyse-panel-leer">Keine Chart-Daten verfügbar.</p>';
+    }
+
+    var klartextZeilen = technikKlartextZeilen(technik);
+    var bbZeile = bollingerKlartextZeile(chart);
+    if (bbZeile) {
+      klartextZeilen.push(bbZeile);
+    }
+    var klartextHtml = klartextZeilen.length > 0
+      ? '<div class="klartext-liste">' + klartextZeilen.map(function (z) {
+          return '<div class="klartext-zeile ' + z.klasse + '">' + escapeHtml(z.text) + '</div>';
+        }).join("") + '</div>'
+      : '<p class="analyse-panel-leer">Keine Technik-Bewertung vorhanden.</p>';
+
+    var gruendeHtml = "";
+    if (technik && technik.gruende && technik.gruende.length > 0) {
+      gruendeHtml = '<div class="analyse-abschnitt"><h4>Gründe</h4><ul class="gruende-liste">' +
+        technik.gruende.map(function (g) { return "<li>" + escapeHtml(g) + "</li>"; }).join("") +
+        '</ul></div>';
+    }
+
+    var einstiegText = einstiegKlartext(technik, unterstuetzung, widerstand, zeile.ticker);
+    var einstiegHtml = einstiegText ? '<div class="einstieg-zeile">' + escapeHtml(einstiegText) + '</div>' : "";
+
+    return (
+      '<div class="analyse-chart-wrapper">' + chartHtml + '</div>' +
+      earningsWarnungZeileHtml(zeile.earnings_warnung) +
+      '<div class="analyse-abschnitt"><h4>Indikatoren</h4>' + klartextHtml + '</div>' +
+      wissenKlartextHtml(zeile.wissen) +
+      fundamentalKlartextHtml(zeile.fundamental) +
+      musterKlartextHtml(zeile.muster) +
+      gruendeHtml +
+      einstiegHtml +
+      '<div class="analyse-abschnitt"><h4>Analysten</h4><div class="analysten-zeile">' +
+      escapeHtml(analystenKlartext(analysten, zeile.ticker)) + '</div></div>' +
+      depotRechnerHtml(zeile)
+    );
+  }
+
+  // Fundamental-Steckbrief (V15, Roadmap 2.2): Klartext-Zeilen aus dem
+  // Fundamentaldaten-Cache; ohne Bestand entfaellt der Abschnitt.
+  function fundamentalKlartextHtml(fundamental) {
+    if (!fundamental || fundamental.length === 0) {
+      return "";
+    }
+    return '<div class="analyse-abschnitt"><h4>Fundamental</h4><div class="klartext-liste">' +
+      fundamental.map(function (zeile) {
+        return '<div class="klartext-zeile ' + escapeHtml(zeile.klasse || "neutral") + '">' +
+          escapeHtml(zeile.text) + '</div>';
+      }).join("") + '</div></div>';
+  }
+
+  // Depot-Rechner (V15, Roadmap 2.6): rechnet aus dem Risiko-Betrag die
+  // Stueckzahl (Stop 2xATR), den Kapitaleinsatz und den Zielgewinn (3xATR).
+  // Rein informativ, kein Handelsknopf.
+  function depotRechnerHtml(zeile) {
+    var technik = zeile.technik || {};
+    if (typeof technik.kurs !== "number" || typeof technik.atr14 !== "number" || technik.atr14 <= 0) {
+      return "";
+    }
+    return (
+      '<div class="analyse-abschnitt depot-rechner" data-ticker="' + escapeHtml(zeile.ticker) +
+      '" data-kurs="' + technik.kurs + '" data-atr="' + technik.atr14 + '">' +
+      '<h4>Depot-Rechner</h4>' +
+      '<label class="rechner-zeile">Risiko je Trade: <input type="number" class="rechner-risiko" value="100" min="10" step="10" inputmode="numeric"> €</label>' +
+      '<div class="rechner-ergebnis"></div>' +
+      '</div>'
+    );
+  }
+
+  function aktualisiereDepotRechner(rechner) {
+    var kurs = Number(rechner.getAttribute("data-kurs"));
+    var atr = Number(rechner.getAttribute("data-atr"));
+    var ticker = rechner.getAttribute("data-ticker");
+    var eingabe = rechner.querySelector(".rechner-risiko");
+    var ausgabe = rechner.querySelector(".rechner-ergebnis");
+    var risiko = Number(eingabe && eingabe.value);
+    if (!ausgabe || !isFinite(risiko) || risiko <= 0 || !isFinite(kurs) || !isFinite(atr) || atr <= 0) {
+      if (ausgabe) { ausgabe.textContent = ""; }
+      return;
+    }
+    var stopAbstand = 2 * atr;
+    var stueck = Math.floor(risiko / stopAbstand);
+    if (stueck < 1) {
+      ausgabe.textContent = "Risiko zu klein für 1 Stück: der Stop-Abstand (2×ATR) beträgt " +
+        formatiereKurs(stopAbstand, ticker) + " je Stück.";
+      return;
+    }
+    var einsatz = stueck * kurs;
+    var zielGewinn = stueck * 3 * atr;
+    ausgabe.textContent = stueck + " Stück, Einsatz " + formatiereKurs(einsatz, ticker) +
+      ". Stop bei " + formatiereKurs(kurs - stopAbstand, ticker) + " (2×ATR, Risiko ~" +
+      Math.round(stueck * stopAbstand) + " " + waehrungKuerzel(ticker) + "), Ziel bei " +
+      formatiereKurs(kurs + 3 * atr, ticker) + " (~+" + Math.round(zielGewinn) + " " +
+      waehrungKuerzel(ticker) + "). Für Short entsprechend gespiegelt.";
+  }
+
+  function aktualisiereAlleDepotRechner() {
+    document.querySelectorAll(".depot-rechner").forEach(aktualisiereDepotRechner);
+  }
+
+  // Wissens-Steckbrief (V12 Aktien-Wissen): Klartext-Zeilen aus dem
+  // taeglichen Wissens-Lauf (Langzeit-Historie, Saisonalitaet,
+  // Ereignis-Reaktionsprofil); ohne Zeilen entfaellt der ganze Abschnitt.
+  function wissenKlartextHtml(wissen) {
+    if (!wissen || wissen.length === 0) {
+      return "";
+    }
+    return '<div class="analyse-abschnitt"><h4>Über diese Aktie gelernt</h4><div class="klartext-liste">' +
+      wissen.map(function (zeile) {
+        return '<div class="klartext-zeile ' + escapeHtml(zeile.klasse || "neutral") + '">' +
+          escapeHtml(zeile.text) + '</div>';
+      }).join("") + '</div></div>';
+  }
+
+  function schalteAnalysePanel(ticker) {
+    var offenNeu = !ZUSTAND.offeneAnalysePanels.has(ticker);
+    if (offenNeu) {
+      ZUSTAND.offeneAnalysePanels.add(ticker);
+    } else {
+      ZUSTAND.offeneAnalysePanels.delete(ticker);
+    }
+    ["analyse-koerper-" + escapeHtml(ticker), "analyse-koerper-mobil-" + escapeHtml(ticker)].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.style.maxHeight = offenNeu ? (el.scrollHeight + "px") : "0px";
+      }
+    });
+  }
+
+  function baueAktienZeileHtml(zeile) {
+    return (
+      '<td class="ticker-zelle"><strong>' + escapeHtml(zeile.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(zeile.name) + '</span></td>' +
+      '<td class="sektor-zelle">' + escapeHtml(zeile.sektor) +
+      (zeile.region ? '<span class="region-hinweis"> · ' + escapeHtml(zeile.region) + '</span>' : '') + '</td>' +
+      '<td class="kurs-gross">' + escapeHtml(formatiereKurs(zeile.kurs, zeile.ticker)) + '</td>' +
+      '<td class="tag-veraenderung ' + prozentKlasse(zeile.veraenderung_prozent) + '">' +
+      escapeHtml(formatiereProzentPfeil(zeile.veraenderung_prozent)) + '</td>' +
+      '<td>' + signalBadgeHtml(zeile) + '</td>' +
+      '<td>' + technikBadgeHtml(zeile.technik) + '</td>' +
+      '<td>' + escapeHtml(formatiereKurs(zeile.einstand, zeile.ticker)) + '</td>' +
+      '<td class="' + prozentKlasse(zeile.pnl_prozent) + '">' + escapeHtml(formatiereProzent(zeile.pnl_prozent)) + '</td>' +
+      '<td class="ausloeser-zelle">' + escapeHtml(kuerzeText(zeile.ausloeser, 60)) + '</td>'
+    );
+  }
+
+  function baueAktienKarteHtml(zeile) {
+    return (
+      '<div class="aktien-karte-kopf">' +
+      '<div><strong>' + escapeHtml(zeile.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(zeile.name) + '</span></div>' +
+      signalBadgeHtml(zeile) +
+      '</div>' +
+      '<div class="aktien-karte-kurs">' + escapeHtml(formatiereKurs(zeile.kurs, zeile.ticker)) + '</div>' +
+      '<div class="aktien-karte-tag ' + prozentKlasse(zeile.veraenderung_prozent) + '">' +
+      escapeHtml(formatiereProzentPfeil(zeile.veraenderung_prozent)) + '</div>' +
+      '<div class="aktien-karte-technik">' + technikBadgeHtml(zeile.technik) + '</div>' +
+      '<div class="aktien-karte-ausloeser">' + escapeHtml(kuerzeText(zeile.ausloeser, 80)) + '</div>'
+    );
+  }
+
+  function renderAktien(aktien) {
+    var tbody = document.getElementById("aktien-tabelle-koerper");
+    var karten = document.getElementById("aktien-karten");
+    var sortiert = sortiereAktien(aktien || []);
+    tbody.innerHTML = "";
+    karten.innerHTML = "";
+
+    renderRegionFilter(aktien || []);
+
+    if (sortiert.length === 0) {
+      var leerText = "Aktuell keine relevanten Aktien, es gab noch kein passendes Ereignis.";
+      tbody.innerHTML = '<tr><td colspan="9" class="leer">' + leerText + '</td></tr>';
+      karten.innerHTML = '<p class="leer">' + leerText + '</p>';
+      aktualisiereSortIndikatoren();
+      wendeRegionFilterAn();
+      return;
+    }
+
+    var chartDatenAlle = (aktuelleDaten && aktuelleDaten.chart_daten) || {};
+    CHART_KONTEXTE = {};
+
+    sortiert.forEach(function (zeile) {
+      var zeilenKlasse = zeile.status === "position" ? "zeile-position" :
+        (zeile.status === "beobachtung" ? "zeile-beobachtung" : "");
+      var offen = ZUSTAND.offeneAnalysePanels.has(zeile.ticker);
+      var panelInhalt = baueAnalysePanelInhaltHtml(zeile, chartDatenAlle);
+
+      var tr = document.createElement("tr");
+      tr.className = ("aktien-zeile " + zeilenKlasse).trim();
+      tr.setAttribute("data-ticker", zeile.ticker);
+      tr.setAttribute("data-region", zeile.region || "");
+      tr.innerHTML = baueAktienZeileHtml(zeile);
+      tbody.appendChild(tr);
+
+      var panelZeile = document.createElement("tr");
+      panelZeile.className = "analyse-panel-zeile";
+      panelZeile.innerHTML = '<td colspan="9"><div class="klappbar-koerper analyse-panel" id="analyse-koerper-' +
+        escapeHtml(zeile.ticker) + '"><div class="analyse-panel-innen">' + panelInhalt + '</div></div></td>';
+      tbody.appendChild(panelZeile);
+      var panelKoerper = panelZeile.querySelector(".klappbar-koerper");
+      panelKoerper.style.maxHeight = offen ? (panelKoerper.scrollHeight + "px") : "0px";
+
       var karte = document.createElement("div");
-      karte.className = "trade-idee-karte";
-      karte.setAttribute("data-event-id", String(ev.id));
-      karte.setAttribute("role", "button");
-      karte.setAttribute("tabindex", "0");
-      karte.innerHTML =
-        '<div class="trade-idee-text">' + escapeHtml(ev.trade_idee) + '</div>' +
-        '<div class="trade-idee-meta">' +
-        '<span class="schwere-badge" style="background:' + schwereFarbe(ev.schwere) + '">' + escapeHtml(ev.schwere) + '</span>' +
-        '<span class="trade-idee-titel">' + escapeHtml(ev.titel) + '</span>' +
-        '<span class="trade-idee-zeit">' + escapeHtml(formatiereRelativeZeit(ev.zeit)) + '</span>' +
-        '</div>';
+      karte.className = "aktien-karte " + zeilenKlasse;
+      karte.setAttribute("data-ticker", zeile.ticker);
+      karte.setAttribute("data-region", zeile.region || "");
+      karte.innerHTML = baueAktienKarteHtml(zeile) +
+        '<div class="klappbar-koerper analyse-panel" id="analyse-koerper-mobil-' + escapeHtml(zeile.ticker) + '">' +
+        '<div class="analyse-panel-innen">' + panelInhalt + '</div></div>';
+      karten.appendChild(karte);
+      var karteKoerper = karte.querySelector(".klappbar-koerper");
+      karteKoerper.style.maxHeight = offen ? (karteKoerper.scrollHeight + "px") : "0px";
+    });
+
+    zeichneAlleChartFlaechen();
+    aktualisiereAlleDepotRechner();
+    aktualisiereSortIndikatoren();
+    wendeRegionFilterAn();
+  }
+
+  // ---------- Regionen-Filter (Task V7.2, Nutzer-Wunsch) ----------
+
+  var REGIONEN = ["USA", "Europa", "Sonstige"];
+
+  function regionAnzahlJeRegion(aktien) {
+    var anzahl = { USA: 0, Europa: 0, Sonstige: 0 };
+    (aktien || []).forEach(function (zeile) {
+      if (Object.prototype.hasOwnProperty.call(anzahl, zeile.region)) {
+        anzahl[zeile.region]++;
+      }
+    });
+    return anzahl;
+  }
+
+  function renderRegionFilter(aktien) {
+    var container = document.getElementById("region-filter-leiste");
+    if (!container) {
+      return;
+    }
+    var anzahl = regionAnzahlJeRegion(aktien);
+    var eintraege = [{ schluessel: "alle", label: "Alle", anzahl: (aktien || []).length }].concat(
+      REGIONEN.map(function (region) { return { schluessel: region, label: region, anzahl: anzahl[region] }; })
+    );
+    container.innerHTML = eintraege.map(function (eintrag) {
+      var aktivKlasse = ZUSTAND.regionFilter === eintrag.schluessel ? " aktiv" : "";
+      return '<button type="button" class="filter-chip region-filter-chip' + aktivKlasse + '" data-region-filter="' +
+        escapeHtml(eintrag.schluessel) + '">' + escapeHtml(eintrag.label) + ' (' + escapeHtml(eintrag.anzahl) + ')</button>';
+    }).join("");
+  }
+
+  // Schliesst (ohne Umschalten) das Analyse-Panel eines Tickers, dessen Zeile/
+  // Karte der Regionen-Filter gerade ausblendet -- sonst bliebe ein Panel
+  // "unsichtbar offen" haengen (Brief: "Panels der ausgeblendeten Zeilen
+  // schliessen").
+  function schliesseAnalysePanelStumm(ticker) {
+    if (!ZUSTAND.offeneAnalysePanels.has(ticker)) {
+      return;
+    }
+    ZUSTAND.offeneAnalysePanels.delete(ticker);
+    ["analyse-koerper-" + escapeHtml(ticker), "analyse-koerper-mobil-" + escapeHtml(ticker)].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.style.maxHeight = "0px";
+      }
+    });
+  }
+
+  function wendeRegionFilterAn() {
+    var filter = ZUSTAND.regionFilter;
+    document.querySelectorAll("#aktien-tabelle-koerper tr.aktien-zeile[data-ticker]").forEach(function (zeile) {
+      var ticker = zeile.getAttribute("data-ticker");
+      var sichtbar = filter === "alle" || zeile.getAttribute("data-region") === filter;
+      zeile.style.display = sichtbar ? "" : "none";
+      var panelZeile = zeile.nextElementSibling;
+      if (panelZeile && panelZeile.classList.contains("analyse-panel-zeile")) {
+        panelZeile.style.display = sichtbar ? "" : "none";
+      }
+      if (!sichtbar) {
+        schliesseAnalysePanelStumm(ticker);
+      }
+    });
+    document.querySelectorAll("#aktien-karten .aktien-karte[data-ticker]").forEach(function (karte) {
+      var ticker = karte.getAttribute("data-ticker");
+      var sichtbar = filter === "alle" || karte.getAttribute("data-region") === filter;
+      karte.style.display = sichtbar ? "" : "none";
+      if (!sichtbar) {
+        schliesseAnalysePanelStumm(ticker);
+      }
+    });
+  }
+
+  // ---------- Paar-Ideen (Task V6.5, marktneutrale Stat-Arb-Kandidaten aus V6.3/V6.4) ----------
+
+  function paarIdeeKarteHtml(idee) {
+    return (
+      '<div class="paar-ideen-kopf"><span class="paar-ideen-chip">marktneutral</span></div>' +
+      '<div class="paar-ideen-text">' + escapeHtml(idee.text) + '</div>'
+    );
+  }
+
+  function renderPaarIdeen(paarIdeen) {
+    var container = document.getElementById("paar-ideen-liste");
+    container.innerHTML = "";
+    if (!paarIdeen || paarIdeen.length === 0) {
+      container.innerHTML = '<p class="leer">Aktuell kein Paar ungewoehnlich weit auseinander.</p>';
+      return;
+    }
+    paarIdeen.forEach(function (idee) {
+      var karte = document.createElement("div");
+      karte.className = "paar-ideen-karte";
+      karte.innerHTML = paarIdeeKarteHtml(idee);
       container.appendChild(karte);
     });
   }
 
-  function springeZuEreignis(id) {
-    var eintrag = document.getElementById("ereignis-" + id);
-    if (!eintrag) {
-      // Event evtl. durch aktive Filter ausgeblendet: Filter zuruecksetzen, damit
-      // der Sprung aus den Trade-Ideen immer funktioniert.
-      ZUSTAND.schwereFilter = "alle";
-      ZUSTAND.deaktivierteKategorien.clear();
-      aktualisiereFilterChips();
-      if (aktuelleDaten) {
-        renderEreignisse(aktuelleDaten.events || []);
-      }
-      eintrag = document.getElementById("ereignis-" + id);
-    }
-    if (!eintrag) {
+  // ---------- Beobachten (Task V7.2, Live-News-Hinweise ohne Handelsempfehlung) ----------
+
+  function beobachtenKarteHtml(eintrag) {
+    var neuBadgeHtml = eintrag.neu ? '<span class="neu-badge">Neu</span>' : "";
+    return (
+      '<div class="beobachten-kopf"><span class="beobachten-chip">Beobachten</span>' + neuBadgeHtml + '</div>' +
+      '<div class="beobachten-ticker"><strong>' + escapeHtml(eintrag.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(eintrag.name) + '</span></div>' +
+      '<div class="beobachten-hinweis">' + escapeHtml(eintrag.hinweis_text) + '</div>' +
+      '<div class="beobachten-grund">' + escapeHtml(eintrag.grund) + '</div>' +
+      '<div class="beobachten-zeit">' + escapeHtml(formatiereRelativeZeit(eintrag.seit)) + '</div>'
+    );
+  }
+
+  function renderBeobachten(beobachten) {
+    var container = document.getElementById("beobachten-liste");
+    container.innerHTML = "";
+    if (!beobachten || beobachten.length === 0) {
+      container.innerHTML = '<p class="leer">Aktuell nichts Neues zu beobachten.</p>';
       return;
     }
-    ZUSTAND.offeneEreignisse.add(id);
-    var kopf = eintrag.querySelector(".akk-kopf");
-    var koerper = eintrag.querySelector(".akk-koerper");
-    kopf.setAttribute("aria-expanded", "true");
-    kopf.classList.add("offen");
-    koerper.style.maxHeight = koerper.scrollHeight + "px";
-    eintrag.scrollIntoView({ behavior: "smooth", block: "center" });
+    beobachten.forEach(function (eintrag) {
+      var karte = document.createElement("div");
+      karte.className = "beobachten-karte";
+      karte.setAttribute("data-ticker", eintrag.ticker);
+      karte.innerHTML = beobachtenKarteHtml(eintrag);
+      container.appendChild(karte);
+    });
+  }
+
+  // Sucht die Tabellenzeile ODER Mobil-Karte eines Tickers (je nachdem, welche
+  // Ansicht per CSS gerade sichtbar ist) -- ohne Selektor-Injektion durch den
+  // Ticker-Wert, siehe Schleife statt String-Verkettung im Selektor.
+  function findeAktienElement(ticker) {
+    var kandidaten = document.querySelectorAll(
+      "#aktien-tabelle-koerper tr.aktien-zeile[data-ticker], #aktien-karten .aktien-karte[data-ticker]"
+    );
+    for (var i = 0; i < kandidaten.length; i++) {
+      if (kandidaten[i].getAttribute("data-ticker") === ticker) {
+        return kandidaten[i];
+      }
+    }
+    return null;
+  }
+
+  // Klick auf eine Beobachten-Karte: zur Aktie in der Tabelle springen und ihr
+  // Analyse-Panel OEFFNEN (nicht umschalten) -- ist der Ticker nicht (mehr) in
+  // der Tabelle, passiert einfach nichts (Brief).
+  function springeZuAktie(ticker) {
+    // Die Aktien-Tabelle lebt im Aktien-Tab (V16): erst dorthin wechseln,
+    // sonst wuerde zu einem unsichtbaren Element gescrollt
+    schalteTab("aktien", true);
+    var ziel = findeAktienElement(ticker);
+    if (!ziel) {
+      return;
+    }
+    // Verbirgt der Regionen-Filter die Zielzeile gerade, zuerst auf "Alle"
+    // zuruecksetzen -- ein Beobachten-Klick soll immer sichtbar landen.
+    if (ZUSTAND.regionFilter !== "alle" && ziel.getAttribute("data-region") !== ZUSTAND.regionFilter) {
+      ZUSTAND.regionFilter = "alle";
+      renderRegionFilter(aktuelleDaten ? (aktuelleDaten.aktien || []) : []);
+      wendeRegionFilterAn();
+    }
+    if (!ZUSTAND.offeneAnalysePanels.has(ticker)) {
+      schalteAnalysePanel(ticker);
+    }
+    ziel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // ---------- Risiko-/Konfidenz-Zeilen (V8.4, Task V8.1/V8.2) ----------
+  // Klartext-Zeilen auf Empfehlungs-/Technik-Idee-Karten, KEINE Balken. Die
+  // Waehrung wird bewusst NICHT vom Backend-Text uebernommen (der ist absichtlich
+  // waehrungsfrei, siehe publisher/daten.py::_risiko_text), sondern aus den
+  // Rohfeldern (stop/ziel/stueck/kapital) mit waehrungKuerzel(ticker) je Ticker
+  // richtig zusammengesetzt. risiko.text dient nur als Fallback, falls die
+  // Rohfelder ausnahmsweise fehlen sollten.
+
+  function risikoZeileHtml(risiko, ticker) {
+    if (!risiko) {
+      return "";
+    }
+    var hatRohdaten = typeof risiko.stop === "number" && typeof risiko.ziel === "number" &&
+      typeof risiko.stueck === "number" && typeof risiko.kapital === "number";
+    if (!hatRohdaten) {
+      return risiko.text ? '<div class="risiko-zeile">' + escapeHtml(risiko.text) + '</div>' : "";
+    }
+    return (
+      '<div class="risiko-zeile">Stop <span class="risiko-stop-zahl">' +
+      escapeHtml(formatiereKurs(risiko.stop, ticker)) + '</span>, Ziel <span class="risiko-ziel-zahl">' +
+      escapeHtml(formatiereKurs(risiko.ziel, ticker)) + '</span>. Etwa ' + escapeHtml(String(risiko.stueck)) +
+      ' Stück (etwa ' + escapeHtml(formatiereKurs(risiko.kapital, ticker)) + ' Einsatz).</div>'
+    );
+  }
+
+  function konfidenzZeileHtml(konfidenz) {
+    if (!konfidenz || !konfidenz.text) {
+      return "";
+    }
+    var einstufung = konfidenz.einstufung === "niedrig" || konfidenz.einstufung === "hoch"
+      ? konfidenz.einstufung : "mittel";
+    var praefix = einstufung === "niedrig" ? "Achtung: " : "";
+    return '<div class="konfidenz-zeile ' + einstufung + '">' + escapeHtml(praefix + konfidenz.text) + '</div>';
+  }
+
+  // Kombi-Chip + Earnings-Warnzeile (V9.3, Task V9.3): `kombi` markiert eine
+  // Empfehlung/Technik-Idee, fuer die dieselbe Aktie auch aus der jeweils
+  // ANDEREN Quelle in dieselbe Richtung zeigt (Backend: publisher.daten.
+  // _setze_kombi_felder); `earnings_warnung` eine bevorstehende
+  // Quartalszahlen-Vorlage (Backend: publisher.daten._earnings_warnung_text).
+  function kombiChipHtml(kombi) {
+    return kombi ? '<span class="kombi-badge-chip">Ereignis + Technik</span>' : "";
+  }
+
+  function earningsWarnungZeileHtml(text) {
+    return text ? '<div class="earnings-warnung-zeile">' + escapeHtml(text) + '</div>' : "";
+  }
+
+  // ---------- Morgen-Briefing (V9.5, Task V9.4/V9.5) ----------
+  // Schmaler Klartext-Block, KEINE Karten: nur sichtbar, wenn `briefing`
+  // vorhanden ist (altes daten.enc ohne das Feld -> Block bleibt verborgen).
+
+  function renderBriefing(briefing) {
+    var blockEl = document.getElementById("briefing-block");
+    var textEl = document.getElementById("briefing-text");
+    if (!briefing || !briefing.text) {
+      blockEl.hidden = true;
+      textEl.textContent = "";
+      return;
+    }
+    blockEl.hidden = false;
+    textEl.textContent = briefing.text;
+  }
+
+  // ---------- Heute wichtig (V8.4, Task V8.3) ----------
+
+  var HEUTE_WICHTIG_QUELLE_LABEL = { ereignis: "Ereignis", technik: "Technik", beobachten: "Beobachten", kombi: "Kombi" };
+
+  function heuteWichtigZeileHtml(eintrag, index) {
+    var richtungKlasse = eintrag.richtung === "long" ? "long" : "short";
+    var quelle = eintrag.quelle || "";
+    var quelleKlasse = quelle === "kombi" ? "kombi" : "";
+    var quelleLabel = HEUTE_WICHTIG_QUELLE_LABEL[quelle] || quelle;
+    return (
+      '<span class="heute-wichtig-nummer">' + (index + 1) + '.</span>' +
+      '<span class="signal-badge ' + richtungKlasse + '">' + escapeHtml(richtungText(eintrag.richtung)) + '</span>' +
+      '<div class="heute-wichtig-inhalt">' +
+      '<div class="heute-wichtig-kopf">' +
+      '<strong>' + escapeHtml(eintrag.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(eintrag.name) + '</span>' +
+      '<span class="heute-wichtig-quelle-chip ' + quelleKlasse + '">' + escapeHtml(quelleLabel) + '</span>' +
+      '</div>' +
+      '<div class="heute-wichtig-grund">' + escapeHtml(eintrag.grund) + '</div>' +
+      '</div>' +
+      '<span class="heute-wichtig-kurs">' + escapeHtml(formatiereKurs(eintrag.kurs, eintrag.ticker)) + '</span>'
+    );
+  }
+
+  function renderHeuteWichtig(heuteWichtig) {
+    var listeEl = document.getElementById("heute-wichtig-liste");
+    listeEl.innerHTML = "";
+    if (!heuteWichtig || heuteWichtig.length === 0) {
+      listeEl.innerHTML = '<p class="leer">Heute keine besonderen Prioritaeten.</p>';
+      return;
+    }
+    heuteWichtig.forEach(function (eintrag, index) {
+      var zeile = document.createElement("div");
+      zeile.className = "heute-wichtig-zeile";
+      zeile.setAttribute("data-ticker", eintrag.ticker);
+      zeile.innerHTML = heuteWichtigZeileHtml(eintrag, index);
+      listeEl.appendChild(zeile);
+    });
+  }
+
+  // ---------- Radar (V8.4, Task V8.3) ----------
+
+  function radarChipHtml(eintrag) {
+    var dringlichkeit = eintrag.dringlichkeit === "hoch" ? "hoch" : "mittel";
+    return '<span class="radar-chip ' + dringlichkeit + '">' + escapeHtml(eintrag.text) + '</span>';
+  }
+
+  function renderRadar(radar) {
+    var leisteEl = document.getElementById("radar-leiste");
+    var chipsEl = document.getElementById("radar-chips");
+    if (!radar || radar.length === 0) {
+      leisteEl.hidden = true;
+      chipsEl.innerHTML = "";
+      return;
+    }
+    chipsEl.innerHTML = radar.map(radarChipHtml).join("");
+    leisteEl.hidden = false;
+  }
+
+  // ---------- Live-Ideen (Technik, V5.5, direkt unter den Empfehlungen) ----------
+
+  function technikIdeeKarteHtml(idee, richtung) {
+    var klasse = richtung === "long" ? "long" : "short";
+    var punkteText = typeof idee.punkte === "number" ? (idee.punkte > 0 ? "+" : "") + idee.punkte : "–";
+    var gruendeHtml = (idee.gruende && idee.gruende.length > 0)
+      ? '<ul class="technik-idee-gruende">' +
+        idee.gruende.map(function (g) { return "<li>" + escapeHtml(g) + "</li>"; }).join("") + '</ul>'
+      : '<p class="leer">Keine Gründe angegeben</p>';
+    var schwachHinweis = idee.schwach
+      ? '<div class="technik-idee-schwach-hinweis">Schwaches Signal, nur beobachten</div>' : "";
+    return (
+      '<div class="technik-idee-kopf">' +
+      '<span class="signal-badge ' + klasse + '">' + escapeHtml(technikRichtungLabel(richtung) + " " + punkteText) + '</span>' +
+      '<span class="quelle-badge-chip">Technik</span>' +
+      kombiChipHtml(idee.kombi) +
+      '</div>' +
+      '<div class="technik-idee-ticker"><strong>' + escapeHtml(idee.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(idee.name) + '</span></div>' +
+      gruendeHtml +
+      '<div class="technik-idee-zeile">' +
+      '<span class="empfehlung-zeitraum">' + escapeHtml(idee.zeitraum_text) + '</span>' +
+      '<span class="empfehlung-kurs">' + escapeHtml(formatiereKurs(idee.kurs, idee.ticker)) + '</span>' +
+      '</div>' +
+      risikoZeileHtml(idee.risiko, idee.ticker) +
+      konfidenzZeileHtml(idee.konfidenz) +
+      earningsWarnungZeileHtml(idee.earnings_warnung) +
+      schwachHinweis
+    );
+  }
+
+  function renderTechnikIdeen(technikIdeen) {
+    var standEl = document.getElementById("technik-ideen-stand");
+    var spaltenEl = document.getElementById("technik-ideen-spalten");
+    var leerEl = document.getElementById("technik-ideen-leer");
+    var longEl = document.getElementById("technik-ideen-long");
+    var shortEl = document.getElementById("technik-ideen-short");
+
+    var lang = (technikIdeen && technikIdeen.long) || [];
+    var kurz = (technikIdeen && technikIdeen.short) || [];
+    var vorhanden = !!(technikIdeen && (technikIdeen.aktualisiert_um || lang.length > 0 || kurz.length > 0));
+
+    if (!vorhanden) {
+      spaltenEl.hidden = true;
+      leerEl.hidden = false;
+      standEl.textContent = "";
+      return;
+    }
+    spaltenEl.hidden = false;
+    leerEl.hidden = true;
+    standEl.textContent = technikIdeen.aktualisiert_um ? "Stand: " + formatiereZeit(technikIdeen.aktualisiert_um) : "";
+
+    [{ richtung: "long", liste: lang, container: longEl },
+     { richtung: "short", liste: kurz, container: shortEl }].forEach(function (gruppe) {
+      gruppe.container.innerHTML = "";
+      if (gruppe.liste.length === 0) {
+        gruppe.container.innerHTML = '<p class="leer">Keine ' +
+          (gruppe.richtung === "long" ? "Long" : "Short") + '-Ideen aktuell</p>';
+        return;
+      }
+      gruppe.liste.forEach(function (idee) {
+        var karte = document.createElement("div");
+        karte.className = "technik-idee-karte" + (idee.schwach ? " schwach" : "");
+        karte.innerHTML = technikIdeeKarteHtml(idee, gruppe.richtung);
+        gruppe.container.appendChild(karte);
+      });
+    });
+  }
+
+  // ---------- Langfrist-Ideen (V9.5, Task V9.5, Karten wie Live-Ideen aber
+  // eigener Chip "Langfristig" -- dieselben technik-idee-*-CSS-Bausteine,
+  // dieselben V8.4-Zeilen-Bausteine risikoZeileHtml/konfidenzZeileHtml/
+  // earningsWarnungZeileHtml). Kein "schwach"-Feld und kein Kombi-Chip
+  // (Backend setzt `kombi` nur auf Empfehlungen/Technik-Ideen, siehe
+  // publisher.daten._setze_kombi_felder) -- Langfrist-Ideen bekommen keinen. ----------
+
+  function fundamentalZeileHtml(text) {
+    return text ? '<div class="fundamental-zeile">' + escapeHtml(text) + '</div>' : "";
+  }
+
+  function langfristIdeeKarteHtml(idee, richtung) {
+    var klasse = richtung === "long" ? "long" : "short";
+    var punkteText = typeof idee.punkte === "number" ? (idee.punkte > 0 ? "+" : "") + idee.punkte : "–";
+    var gruendeHtml = (idee.gruende && idee.gruende.length > 0)
+      ? '<ul class="technik-idee-gruende">' +
+        idee.gruende.map(function (g) { return "<li>" + escapeHtml(g) + "</li>"; }).join("") + '</ul>'
+      : '<p class="leer">Keine Gründe angegeben</p>';
+    return (
+      '<div class="technik-idee-kopf">' +
+      '<span class="signal-badge ' + klasse + '">' + escapeHtml(technikRichtungLabel(richtung) + " " + punkteText) + '</span>' +
+      '<span class="langfrist-badge-chip">Langfristig</span>' +
+      '</div>' +
+      '<div class="technik-idee-ticker"><strong>' + escapeHtml(idee.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(idee.name) + '</span></div>' +
+      gruendeHtml +
+      '<div class="technik-idee-zeile">' +
+      '<span class="empfehlung-zeitraum">' + escapeHtml(idee.zeitraum_text) + '</span>' +
+      '<span class="empfehlung-kurs">' + escapeHtml(formatiereKurs(idee.kurs, idee.ticker)) + '</span>' +
+      '</div>' +
+      fundamentalZeileHtml(idee.fundamental_text) +
+      risikoZeileHtml(idee.risiko, idee.ticker) +
+      konfidenzZeileHtml(idee.konfidenz) +
+      earningsWarnungZeileHtml(idee.earnings_warnung)
+    );
+  }
+
+  function renderLangfristIdeen(langfristIdeen) {
+    var standEl = document.getElementById("langfrist-ideen-stand");
+    var spaltenEl = document.getElementById("langfrist-ideen-spalten");
+    var leerEl = document.getElementById("langfrist-ideen-leer");
+    var longEl = document.getElementById("langfrist-ideen-long");
+    var shortEl = document.getElementById("langfrist-ideen-short");
+
+    var lang = (langfristIdeen && langfristIdeen.long) || [];
+    var kurz = (langfristIdeen && langfristIdeen.short) || [];
+    var vorhanden = lang.length > 0 || kurz.length > 0;
+
+    if (!vorhanden) {
+      spaltenEl.hidden = true;
+      leerEl.hidden = false;
+      standEl.textContent = "";
+      return;
+    }
+    spaltenEl.hidden = false;
+    leerEl.hidden = true;
+    standEl.textContent = langfristIdeen.aktualisiert_um ? "Stand: " + formatiereZeit(langfristIdeen.aktualisiert_um) : "";
+
+    [{ richtung: "long", liste: lang, container: longEl },
+     { richtung: "short", liste: kurz, container: shortEl }].forEach(function (gruppe) {
+      gruppe.container.innerHTML = "";
+      if (gruppe.liste.length === 0) {
+        gruppe.container.innerHTML = '<p class="leer">Keine ' +
+          (gruppe.richtung === "long" ? "Long" : "Short") + '-Ideen aktuell</p>';
+        return;
+      }
+      gruppe.liste.forEach(function (idee) {
+        var karte = document.createElement("div");
+        karte.className = "technik-idee-karte";
+        karte.innerHTML = langfristIdeeKarteHtml(idee, gruppe.richtung);
+        gruppe.container.appendChild(karte);
+      });
+    });
+  }
+
+  // ---------- Empfehlungen (V4.4, prominent unter KPI) ----------
+
+  function empfehlungKarteHtml(empfehlung) {
+    var richtungKlasse = empfehlung.richtung === "long" ? "long" : "short";
+    var punkte = empfehlung.staerke > 0 ? '<span class="staerke-punkte">' +
+      new Array(empfehlung.staerke + 1).join("●") + '</span>' : "";
+    return (
+      '<div class="empfehlung-kopf">' +
+      '<span class="signal-badge ' + richtungKlasse + '">' + escapeHtml(empfehlung.richtung_text) + '</span>' +
+      punkte +
+      '<span class="quelle-badge-chip">Ereignis</span>' +
+      kombiChipHtml(empfehlung.kombi) +
+      '</div>' +
+      '<div class="empfehlung-ticker"><strong>' + escapeHtml(empfehlung.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(empfehlung.name) + '</span></div>' +
+      '<div class="empfehlung-grund">' + escapeHtml(empfehlung.grund) + '</div>' +
+      '<div class="empfehlung-zeile">' +
+      '<span class="empfehlung-zeitraum">' + escapeHtml(empfehlung.zeitraum_text) + '</span>' +
+      '<span class="empfehlung-kurs">' + escapeHtml(formatiereKurs(empfehlung.kurs, empfehlung.ticker)) + '</span>' +
+      '</div>' +
+      risikoZeileHtml(empfehlung.risiko, empfehlung.ticker) +
+      konfidenzZeileHtml(empfehlung.konfidenz) +
+      earningsWarnungZeileHtml(empfehlung.earnings_warnung)
+    );
+  }
+
+  function renderEmpfehlungen(empfehlungen) {
+    var container = document.getElementById("empfehlungen-liste");
+    container.innerHTML = "";
+    if (!empfehlungen || empfehlungen.length === 0) {
+      container.innerHTML = '<p class="leer">Aktuell keine aktiven Empfehlungen.</p>';
+      return;
+    }
+    empfehlungen.forEach(function (empfehlung) {
+      var karte = document.createElement("div");
+      karte.className = "empfehlung-karte";
+      karte.innerHTML = empfehlungKarteHtml(empfehlung);
+      container.appendChild(karte);
+    });
+  }
+
+  // ---------- Offene Positionen (kompakt, unter der Aktien-Tabelle) ----------
+
+  function renderOffenePositionen(depot) {
+    var panel = document.getElementById("offene-positionen");
+    var liste = document.getElementById("offene-positionen-liste");
+    var alle = [];
+    BUECHER.forEach(function (buch) {
+      var buchDaten = (depot && depot[buch]) || {};
+      (buchDaten.positionen || []).forEach(function (pos) {
+        alle.push({ buch: buch, position: pos });
+      });
+    });
+
+    liste.innerHTML = "";
+    if (alle.length === 0) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+
+    alle.forEach(function (eintrag) {
+      var pos = eintrag.position;
+      var zeile = document.createElement("div");
+      zeile.className = "offene-position-zeile";
+      zeile.innerHTML =
+        '<span class="offene-position-buch">' + escapeHtml(BUCH_TITEL[eintrag.buch]) + '</span>' +
+        '<strong class="offene-position-ticker">' + escapeHtml(pos.ticker) + '</strong>' +
+        '<span class="richtung ' + escapeHtml(pos.richtung) + '">' + richtungText(pos.richtung) + '</span>' +
+        '<span class="offene-position-kurse">' + escapeHtml(formatiereKurs(pos.einstand, pos.ticker)) +
+        ' → ' + escapeHtml(formatiereKurs(pos.kurs, pos.ticker)) + '</span>' +
+        '<span class="' + prozentKlasse(pos.pnl_prozent) + '">' + escapeHtml(formatiereProzent(pos.pnl_prozent)) + '</span>' +
+        '<span class="offene-position-stop">Stop ' + escapeHtml(formatiereKurs(pos.stop_kurs, pos.ticker)) + '</span>';
+      liste.appendChild(zeile);
+    });
   }
 
   // ---------- Karte ----------
@@ -1121,7 +3796,7 @@
       return;
     }
     karteInstanz = L.map("karte", { worldCopyJump: true }).setView([20, 10], 2);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; OpenStreetMap, &copy; CARTO',
       subdomains: "abcd",
       maxZoom: 19
@@ -1195,6 +3870,168 @@
     });
   }
 
+  // ---------- Themen-Kachel-Board (V4.4) ----------
+
+  function themaNettoBadgeHtml(nettoRichtung) {
+    var klasse = nettoRichtung === "long" ? "long" : (nettoRichtung === "short" ? "short" : "neutral");
+    var text = nettoRichtung === "long" ? "Long" : (nettoRichtung === "short" ? "Short" : "Neutral");
+    return '<span class="thema-netto-badge ' + klasse + '">' + text + '</span>';
+  }
+
+  function themaAktienMiniTabelleHtml(aktien) {
+    if (!aktien || aktien.length === 0) {
+      return '<p class="leer">Keine Aktien in diesem Thema</p>';
+    }
+    var zeilen = aktien.map(function (aktie) {
+      return "<tr><td>" + escapeHtml(aktie.ticker) + "</td>" +
+        "<td>" + escapeHtml(aktie.name) + "</td>" +
+        "<td>" + escapeHtml(formatiereKurs(aktie.kurs, aktie.ticker)) + "</td>" +
+        '<td class="' + prozentKlasse(aktie.veraenderung_prozent) + '">' +
+        escapeHtml(formatiereProzentPfeil(aktie.veraenderung_prozent)) + "</td>" +
+        "<td>" + escapeHtml(aktie.status) + "</td></tr>";
+    }).join("");
+    return '<div class="thema-tabelle-wrapper"><table class="positionen-tabelle thema-aktien-tabelle">' +
+      "<thead><tr><th>Ticker</th><th>Name</th><th>Kurs</th><th>Tag %</th><th>Status</th></tr></thead>" +
+      "<tbody>" + zeilen + "</tbody></table></div>";
+  }
+
+  function themaNewsListeHtml(news) {
+    if (!news || news.length === 0) {
+      return '<p class="leer">Keine aktuellen News zu diesem Thema</p>';
+    }
+    var eintraege = news.map(function (eintrag) {
+      return "<li><span class=\"thema-news-zeit\">" + escapeHtml(formatiereRelativeZeit(eintrag.zeit)) + "</span>" +
+        escapeHtml(eintrag.titel) + "</li>";
+    }).join("");
+    return '<ul class="thema-news-liste">' + eintraege + '</ul>';
+  }
+
+  function baueThemaKachelHtml(thema, offen) {
+    var kopfHtml =
+      '<button type="button" class="thema-kopf" data-thema="' + escapeHtml(thema.schluessel) +
+      '" aria-expanded="' + (offen ? "true" : "false") + '">' +
+      '<span class="thema-emoji">' + escapeHtml(thema.emoji) + '</span>' +
+      '<span class="thema-label">' + escapeHtml(thema.label) + '</span>' +
+      themaNettoBadgeHtml(thema.netto_richtung) +
+      '<span class="thema-schnitt ' + prozentKlasse(thema.schnitt_veraenderung) + '">' +
+      escapeHtml(formatiereProzentPfeil(thema.schnitt_veraenderung)) + '</span>' +
+      '<span class="thema-anzahl">' + escapeHtml(thema.anzahl_aktien) + ' Aktien, ' +
+      escapeHtml(thema.anzahl_signale) + ' Signale</span>' +
+      '<span class="akk-pfeil" aria-hidden="true">▾</span>' +
+      '</button>';
+    // Sektor-Profil (V13, Lern-Agenten): kurzer Kontext-Absatz oben im
+    // aufgeklappten Thema; entfaellt ohne hinterlegtes Profil.
+    var profilHtml = "";
+    if (thema.sektor_profil && thema.sektor_profil.beschreibung) {
+      profilHtml = '<p class="thema-profil">' + escapeHtml(thema.sektor_profil.beschreibung) +
+        (thema.sektor_profil.zyklik ? " " + escapeHtml(thema.sektor_profil.zyklik) : "") + '</p>';
+    }
+    var koerperHtml =
+      '<div class="thema-koerper" id="thema-' + escapeHtml(thema.schluessel) + '-koerper">' +
+      '<div class="thema-inhalt">' +
+      profilHtml +
+      themaAktienMiniTabelleHtml(thema.aktien) +
+      '<h3>News</h3>' +
+      themaNewsListeHtml(thema.news) +
+      '</div></div>';
+    return kopfHtml + koerperHtml;
+  }
+
+  function renderThemen(themen) {
+    var board = document.getElementById("themen-board");
+    board.innerHTML = "";
+    if (!themen || themen.length === 0) {
+      board.innerHTML = '<p class="leer">Keine Themen konfiguriert</p>';
+      return;
+    }
+    themen.forEach(function (thema) {
+      var offen = ZUSTAND.offeneThemen.has(thema.schluessel);
+      var kachel = document.createElement("div");
+      kachel.className = "thema-kachel";
+      kachel.id = "thema-" + thema.schluessel;
+      kachel.innerHTML = baueThemaKachelHtml(thema, offen);
+      board.appendChild(kachel);
+
+      var kopf = kachel.querySelector(".thema-kopf");
+      var koerper = kachel.querySelector(".thema-koerper");
+      kopf.classList.toggle("offen", offen);
+      koerper.style.maxHeight = offen ? (koerper.scrollHeight + "px") : "0px";
+    });
+  }
+
+  function schalteThemaAkkordeon(schluessel) {
+    var kachel = document.getElementById("thema-" + schluessel);
+    if (!kachel) {
+      return;
+    }
+    var kopf = kachel.querySelector(".thema-kopf");
+    var koerper = kachel.querySelector(".thema-koerper");
+    var offenNeu = !ZUSTAND.offeneThemen.has(schluessel);
+    if (offenNeu) {
+      ZUSTAND.offeneThemen.add(schluessel);
+    } else {
+      ZUSTAND.offeneThemen.delete(schluessel);
+    }
+    kopf.setAttribute("aria-expanded", offenNeu ? "true" : "false");
+    kopf.classList.toggle("offen", offenNeu);
+    koerper.style.maxHeight = offenNeu ? (koerper.scrollHeight + "px") : "0px";
+  }
+
+  // ---------- Selbstdiagnose (V4.4) ----------
+
+  var SELBSTBEFUND_TEXT = { ok: "OK", info: "Info", warnung: "Warnung", kritisch: "Kritisch" };
+
+  function schwereKlasse(schwere) {
+    return SELBSTBEFUND_TEXT.hasOwnProperty(schwere) ? schwere : "info";
+  }
+
+  function befundZeileHtml(befund) {
+    var klasse = schwereKlasse(befund.schwere);
+    return (
+      '<div class="selbstbefund-zeile ' + klasse + '">' +
+      '<span class="selbstbefund-schwere-badge ' + klasse + '">' +
+      escapeHtml(SELBSTBEFUND_TEXT[klasse]) + '</span>' +
+      '<div class="selbstbefund-inhalt">' +
+      '<div class="detail-zeile"><span class="detail-label">Bereich</span><span>' +
+      escapeHtml(befund.bereich) + '</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Befund</span><span>' +
+      escapeHtml(befund.befund) + '</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Schluss</span><span>' +
+      escapeHtml(befund.schluss) + '</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Empfehlung</span><span>' +
+      escapeHtml(befund.empfehlung) + '</span></div>' +
+      '</div></div>'
+    );
+  }
+
+  function renderSelbstbefund(selbstbefund) {
+    var container = document.getElementById("selbstbefund-liste");
+    if (!selbstbefund || selbstbefund.length === 0) {
+      container.innerHTML = '<p class="leer">Noch kein Diagnose-Lauf gespeichert.</p>';
+      return;
+    }
+    container.innerHTML = selbstbefund.map(befundZeileHtml).join("");
+  }
+
+  function ermittleAmpelStatus(selbstbefund) {
+    var liste = selbstbefund || [];
+    var hatKritisch = liste.some(function (befund) { return befund.schwere === "kritisch"; });
+    if (hatKritisch) {
+      return { klasse: "rot", text: "Achtung" };
+    }
+    var hatWarnung = liste.some(function (befund) { return befund.schwere === "warnung"; });
+    if (hatWarnung) {
+      return { klasse: "gelb", text: "Hinweise" };
+    }
+    return { klasse: "gruen", text: "System ok" };
+  }
+
+  function renderAmpel(selbstbefund) {
+    var status = ermittleAmpelStatus(selbstbefund);
+    document.getElementById("ampel-punkt").className = "ampel-punkt " + status.klasse;
+    document.getElementById("ampel-text").textContent = status.text;
+  }
+
   // ---------- Depot ----------
 
   function zeichneSparkline(canvas, verlauf) {
@@ -1215,7 +4052,7 @@
       var y = hoehe - 2 - ((punkt[1] - min) / spanne) * (hoehe - 4);
       if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
     });
-    ctx.strokeStyle = "#6B7A3F";
+    ctx.strokeStyle = "#3c5a1e";
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -1298,12 +4135,14 @@
     var hatGeo = ev.lat !== null && ev.lat !== undefined && ev.lon !== null && ev.lon !== undefined;
     var geoText = hatGeo ? escapeHtml(ev.lat) + ", " + escapeHtml(ev.lon) : "unbekannt";
     var tradeIdeeText = ev.trade_idee && ev.trade_idee.length > 0 ? escapeHtml(ev.trade_idee) : "Keine, nur Beobachtung";
+    var neuBadgeHtml = ev.neu ? '<span class="neu-badge">Neu</span>' : "";
 
     var kopfHtml =
       '<button type="button" class="akk-kopf" data-event-id="' + escapeHtml(ev.id) + '" aria-expanded="false">' +
       '<span class="kategorie-emoji">' + kategorieEmoji(ev.kategorie) + '</span>' +
       '<span class="ereignis-titel">' + escapeHtml(ev.titel) + '</span>' +
       '<span class="schwere-badge" style="background:' + schwereFarbe(ev.schwere) + '">' + escapeHtml(ev.schwere) + '</span>' +
+      neuBadgeHtml +
       '<span class="ereignis-zeit-relativ">' + escapeHtml(formatiereRelativeZeit(ev.zeit)) + '</span>' +
       '<span class="akk-pfeil" aria-hidden="true">▾</span>' +
       '</button>';
@@ -1352,6 +4191,7 @@
     liste.innerHTML = "";
     if (gefiltert.length === 0) {
       liste.innerHTML = '<p class="leer">Keine Ereignisse für die aktuelle Filterauswahl</p>';
+      aktualisiereUmschliessendeKlappbareHoehe(liste);
       return;
     }
     gefiltert.forEach(function (ev) {
@@ -1368,6 +4208,48 @@
       kopf.classList.toggle("offen", offen);
       koerper.style.maxHeight = offen ? (koerper.scrollHeight + "px") : "0px";
     });
+    // Liste kann durch Filterwechsel oder Auto-Refresh (renderAlles) eine
+    // andere Gesamthoehe als vorher bekommen, waehrend das umschliessende
+    // "Ereignisse"-Panel schon offen ist -- ohne Nachziehen bliebe der
+    // aeussere Container bei der alten Hoehe haengen (Layout-Haertung V7.3).
+    aktualisiereUmschliessendeKlappbareHoehe(liste);
+  }
+
+  // Sektionskopf "N neu" (Task V7.2, Live-News-Gefuehl): `neu_anzahl` zaehlt
+  // ALLE neuen Events (Top-Level-Feld, unabhaengig von der Filterauswahl der
+  // News-Sektion), nicht nur die gerade sichtbaren.
+  function aktualisiereEreignisseKopf(neuAnzahl) {
+    var badge = document.getElementById("ereignisse-neu-anzahl");
+    if (!badge) {
+      return;
+    }
+    if (typeof neuAnzahl === "number" && neuAnzahl > 0) {
+      badge.textContent = neuAnzahl + " neu";
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+      badge.textContent = "";
+    }
+  }
+
+  // Passt die max-height eines bereits geoeffneten umschliessenden
+  // .klappbar-koerper an, nachdem sich die Hoehe von verschachteltem Inhalt
+  // geaendert hat -- sonst bleibt der aeussere Container bei der beim Oeffnen
+  // des Panels gemessenen (kleineren) Hoehe haengen und schneidet neuen
+  // Inhalt ab (Layout-Haertung V7.3). Wird aufgerufen: (1) aus
+  // schalteEreignisAkkordeon, wenn ein einzelner News-Eintrag auf-/zugeklappt
+  // wird; (2) aus renderEreignisse, nachdem die Liste neu aufgebaut wurde
+  // (Filterwechsel in der Filterleiste, Auto-Refresh via renderAlles) -- beides
+  // kann die Gesamthoehe der Liste aendern, waehrend das umschliessende
+  // "Ereignisse"-Panel schon offen ist.
+  function aktualisiereUmschliessendeKlappbareHoehe(element) {
+    var vorfahr = element.parentElement;
+    while (vorfahr && vorfahr !== document.body) {
+      if (vorfahr.classList.contains("klappbar-koerper") && vorfahr.style.maxHeight && vorfahr.style.maxHeight !== "0px") {
+        vorfahr.style.maxHeight = vorfahr.scrollHeight + "px";
+      }
+      vorfahr = vorfahr.parentElement;
+    }
   }
 
   function schalteEreignisAkkordeon(id) {
@@ -1386,6 +4268,7 @@
     kopf.setAttribute("aria-expanded", offenNeu ? "true" : "false");
     kopf.classList.toggle("offen", offenNeu);
     koerper.style.maxHeight = offenNeu ? (koerper.scrollHeight + "px") : "0px";
+    aktualisiereUmschliessendeKlappbareHoehe(koerper);
   }
 
   // ---------- Filterleiste ----------
@@ -1421,13 +4304,332 @@
     });
   }
 
+  // ---------- Ideen-Archiv (V9.5, Task V9.4/V9.5, einklappbares Panel unter
+  // den Trades): Treffer gruen / Kein Treffer rot / ohne Messung grau, ein
+  // Vorlaeufig-Fall (rendite_1d-Fallback, siehe publisher.daten.
+  // _ausgang_text_und_treffer) traegt dieselbe Treffer/Kein-Treffer-Farbe wie
+  // sein `treffer`-Feld, nur gedimmt (CSS .archiv-eintrag.vorlaeufig). ----------
+
+  function archivAusgangKlasse(eintrag) {
+    if (eintrag.treffer === true) {
+      return "treffer";
+    }
+    if (eintrag.treffer === false) {
+      return "kein-treffer";
+    }
+    return "ohne-messung";
+  }
+
+  function archivEintragHtml(eintrag) {
+    var richtungKlasse = eintrag.richtung === "long" ? "long" : "short";
+    return (
+      '<div class="archiv-kopf">' +
+      '<span class="signal-badge ' + richtungKlasse + '">' + escapeHtml(richtungText(eintrag.richtung)) + '</span>' +
+      '<strong>' + escapeHtml(eintrag.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(eintrag.name) + '</span>' +
+      '<span class="archiv-zeit">' + formatiereZeit(eintrag.erzeugt_um) + '</span>' +
+      '</div>' +
+      '<div class="archiv-grund">' + escapeHtml(eintrag.grund) + '</div>' +
+      '<div class="archiv-ausgang">' + escapeHtml(eintrag.ausgang_text) + '</div>'
+    );
+  }
+
+  function renderArchiv(archiv) {
+    var container = document.getElementById("archiv-liste");
+    container.innerHTML = "";
+    if (!archiv || archiv.length === 0) {
+      container.innerHTML = '<p class="leer">Noch keine abgelaufenen Ideen im Archiv.</p>';
+      return;
+    }
+    archiv.forEach(function (eintrag) {
+      var klasse = archivAusgangKlasse(eintrag);
+      // V9.5 Follow-up-Ruling: primaer ueber das eigene `vorlaeufig`-Feld
+      // (statt fragil per Substring auf ausgang_text zu matchen). Fallback
+      // auf den Substring-Check NUR fuer alte Payloads ohne dieses Feld.
+      var vorlaeufig = eintrag.vorlaeufig === undefined
+        ? (typeof eintrag.ausgang_text === "string" && eintrag.ausgang_text.indexOf("Vorlaeufig") !== -1)
+        : eintrag.vorlaeufig === true;
+      var div = document.createElement("div");
+      div.className = "archiv-eintrag " + klasse + (vorlaeufig ? " vorlaeufig" : "");
+      div.innerHTML = archivEintragHtml(eintrag);
+      container.appendChild(div);
+    });
+  }
+
+  // ---------- Tab-Navigation (V16: Bereiche statt Endlos-Seite) ----------
+
+  var TAB_BEREICHE = {
+    heute: ["briefing-block", "gesamtlage", "ki-trades", "heute-wichtig", "radar-leiste", "empfehlungen"],
+    ideen: ["technik-ideen", "paar-ideen", "langfrist-ideen", "beobachten"],
+    aktien: ["aktien", "themen"],
+    depot: ["offene-positionen", "depot", "trades", "archiv"],
+    lage: ["ereignisse", "karte-panel", "rubriken"],
+    wissen: ["lernen", "marktwissen", "selbstdiagnose", "quellen"]
+  };
+
+  // Klappbare Bereiche in einem eben erst sichtbar gewordenen Tab haben ihre
+  // Hoehe im versteckten Zustand mit scrollHeight 0 gemessen: offene
+  // Akkordeons nachziehen (geschlossene bleiben bei 0px).
+  function resyncSichtbareAkkordeons() {
+    document.querySelectorAll(".klappbar-koerper").forEach(function (el) {
+      if (el.style.maxHeight && el.style.maxHeight !== "0px") {
+        el.style.maxHeight = el.scrollHeight + "px";
+      }
+    });
+  }
+
+  function wendeTabAn() {
+    var aktiv = ZUSTAND.aktiverTab || "heute";
+    Object.keys(TAB_BEREICHE).forEach(function (tab) {
+      TAB_BEREICHE[tab].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.classList.toggle("tab-verborgen", tab !== aktiv);
+        }
+      });
+    });
+    document.querySelectorAll(".tab-knopf").forEach(function (knopf) {
+      knopf.classList.toggle("aktiv", knopf.getAttribute("data-tab") === aktiv);
+    });
+  }
+
+  function schalteTab(name, ohneScroll) {
+    ZUSTAND.aktiverTab = name;
+    wendeTabAn();
+    resyncSichtbareAkkordeons();
+    if (name === "aktien") {
+      // Charts wurden im versteckten Tab mit Fallback-Breite gezeichnet
+      zeichneAlleChartFlaechen();
+      aktualisiereAlleDepotRechner();
+    }
+    if (name === "lage" && karteInstanz) {
+      karteInstanz.invalidateSize();
+    }
+    if (!ohneScroll) {
+      window.scrollTo({ top: 0 });
+    }
+  }
+
+  // ---------- Gesamtlage (V13: Denk-Schicht ueber allen Trade-Ideen) ----------
+
+  function formatiereBruchProzent(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    var prozent = wert * 100;
+    if (Math.abs(prozent) < 0.05) {
+      return "0,0 %";
+    }
+    return (prozent > 0 ? "+" : "") + prozent.toLocaleString("de-DE", {
+      minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
+  }
+
+  function renderGesamtlage(gesamtlage) {
+    var panel = document.getElementById("gesamtlage");
+    var zeilenEl = document.getElementById("gesamtlage-zeilen");
+    var koerper = document.getElementById("gesamtlage-koerper");
+    var zeilen = (gesamtlage && gesamtlage.zeilen) || [];
+    var sektoren = (gesamtlage && gesamtlage.sektoren) || [];
+    if (zeilen.length === 0 && sektoren.length === 0) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    zeilenEl.innerHTML = "";
+    zeilen.forEach(function (zeile) {
+      var div = document.createElement("div");
+      div.className = "klartext-zeile " + (zeile.klasse || "neutral");
+      div.textContent = zeile.text;
+      zeilenEl.appendChild(div);
+    });
+    koerper.innerHTML = "";
+    sektoren.forEach(function (sektor) {
+      var tr = document.createElement("tr");
+      var ideen = [];
+      if (sektor.ideen_long > 0) { ideen.push('<span class="ideen-long">' + sektor.ideen_long + ' long</span>'); }
+      if (sektor.ideen_short > 0) { ideen.push('<span class="ideen-short">' + sektor.ideen_short + ' short</span>'); }
+      var breite = sektor.breite_gemessen > 0
+        ? sektor.breite_ueber + " von " + sektor.breite_gemessen
+        : "–";
+      tr.innerHTML =
+        '<td>' + escapeHtml(sektor.label) + '</td>' +
+        '<td>' + (ideen.join(" ") || "–") + '</td>' +
+        '<td>' + escapeHtml(breite) + '</td>' +
+        '<td class="' + prozentKlasse((sektor.momentum_3m || 0) * 100) + '">' +
+        escapeHtml(formatiereBruchProzent(sektor.momentum_3m)) + '</td>' +
+        '<td class="' + prozentKlasse((sektor.momentum_1j || 0) * 100) + '">' +
+        escapeHtml(formatiereBruchProzent(sektor.momentum_1j)) + '</td>';
+      koerper.appendChild(tr);
+    });
+  }
+
+  // ---------- KI-Trades (V14: Claudes Paper-Einschaetzungen + Checks) ----------
+
+  var KI_HORIZONT_TEXT = { kurz: "kurzfristig", mittel: "mittelfristig", lang: "langfristig" };
+  var KI_URTEILS_PUNKT = { kurz: "3", mittel: "20", lang: "60" };
+
+  function renderKiTrades(kiTrades) {
+    var panel = document.getElementById("ki-trades");
+    var bilanzEl = document.getElementById("ki-trades-bilanz");
+    var koerper = document.getElementById("ki-trades-koerper");
+    var letzteEl = document.getElementById("ki-trades-letzte");
+    var offene = (kiTrades && kiTrades.offen) || [];
+    var letzte = (kiTrades && kiTrades.letzte) || [];
+    var bilanz = (kiTrades && kiTrades.bilanz) || {};
+    if (offene.length === 0 && letzte.length === 0) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+
+    bilanzEl.innerHTML = "";
+    var horizonte = ["kurz", "mittel", "lang"];
+    var hatBilanz = false;
+    horizonte.forEach(function (horizont) {
+      var eintrag = bilanz[horizont];
+      if (!eintrag) { return; }
+      hatBilanz = true;
+      var quoteProzent = Math.round(eintrag.quote * 100);
+      var zeile = document.createElement("div");
+      zeile.className = "klartext-zeile " + (eintrag.quote >= 0.55 ? "positiv" : (eintrag.quote <= 0.45 ? "negativ" : "neutral"));
+      zeile.textContent = "Bilanz " + KI_HORIZONT_TEXT[horizont] + ": " + eintrag.treffer + " von " +
+        eintrag.gemessen + " am Urteils-Punkt im Plus (" + quoteProzent + " %, Ø " +
+        formatiereBruchProzent(eintrag.schnitt_rendite) + ").";
+      bilanzEl.appendChild(zeile);
+    });
+    if (!hatBilanz) {
+      var hinweis = document.createElement("div");
+      hinweis.className = "klartext-zeile neutral";
+      hinweis.textContent = "Noch keine abgeschlossenen Messungen. Die Checks laufen automatisch nach 1, 3, 5, 20 und 60 Handelstagen.";
+      bilanzEl.appendChild(hinweis);
+    }
+
+    koerper.innerHTML = "";
+    offene.forEach(function (trade) {
+      var schluessel = trade.ticker + ":" + trade.horizont;
+      var offenBegruendung = ZUSTAND.offeneKiBegruendungen.has(schluessel);
+      var tr = document.createElement("tr");
+      tr.className = "ki-trade-zeile";
+      tr.setAttribute("data-ki-trade", schluessel);
+      var laufend = trade.rendite_laufend;
+      var laufendKlasse = typeof laufend === "number" ? prozentKlasse(laufend * 100) : "";
+      tr.innerHTML =
+        '<td><strong>' + escapeHtml(trade.ticker) + '</strong></td>' +
+        '<td><span class="signal-badge ' + (trade.richtung === "long" ? "long" : "short") + '">' +
+        escapeHtml(richtungText(trade.richtung)) + '</span></td>' +
+        '<td>' + escapeHtml(KI_HORIZONT_TEXT[trade.horizont] || trade.horizont) + '</td>' +
+        '<td>' + escapeHtml(formatiereKurs(trade.einstieg, trade.ticker)) + '</td>' +
+        '<td>' + escapeHtml(formatiereKurs(trade.kurs, trade.ticker)) + '</td>' +
+        '<td class="' + laufendKlasse + '">' + escapeHtml(formatiereBruchProzent(laufend)) + '</td>' +
+        '<td>' + escapeHtml(formatiereKurs(trade.stop, trade.ticker)) + '</td>' +
+        '<td>' + escapeHtml(formatiereKurs(trade.ziel, trade.ticker)) + '</td>' +
+        '<td class="ki-begruendung-pfeil">' + (offenBegruendung ? "▴" : "▾") + '</td>';
+      koerper.appendChild(tr);
+
+      // V16 (Nutzer-Wunsch "mehr begruenden"): volle, strukturierte
+      // Begruendung als aufklappbare Zeile; Absaetze per Zeilenumbruch
+      var detail = document.createElement("tr");
+      detail.className = "ki-begruendung-zeile";
+      if (!offenBegruendung) {
+        detail.classList.add("tab-verborgen");
+      }
+      var zelle = document.createElement("td");
+      zelle.setAttribute("colspan", "9");
+      var kasten = document.createElement("div");
+      kasten.className = "ki-begruendung";
+      String(trade.begruendung || "").split("\n").forEach(function (absatz) {
+        if (!absatz.trim()) { return; }
+        var p = document.createElement("p");
+        p.textContent = absatz.trim();
+        kasten.appendChild(p);
+      });
+      zelle.appendChild(kasten);
+      detail.appendChild(zelle);
+      koerper.appendChild(detail);
+    });
+
+    letzteEl.innerHTML = "";
+    letzte.forEach(function (trade) {
+      var urteil = (trade.messungen || {})[KI_URTEILS_PUNKT[trade.horizont]];
+      var treffer = typeof urteil === "number" && urteil > 0;
+      var messTexte = Object.keys(trade.messungen || {}).sort(function (a, b) { return a - b; })
+        .map(function (punkt) {
+          return "nach " + punkt + (punkt === "1" ? " Tag " : " Tagen ") +
+            formatiereBruchProzent(trade.messungen[punkt]);
+        });
+      var zeile = document.createElement("div");
+      zeile.className = "klartext-zeile " + (treffer ? "positiv" : "negativ");
+      zeile.textContent = trade.ticker + " " + richtungText(trade.richtung) + " (" +
+        (KI_HORIZONT_TEXT[trade.horizont] || trade.horizont) + "): " + messTexte.join(", ") + ". " +
+        (treffer ? "Treffer." : "Kein Treffer.");
+      letzteEl.appendChild(zeile);
+    });
+  }
+
+  // ---------- Marktwissen (V13: Denk-Bloecke der Lern-Agenten) ----------
+
+  function renderMarktwissen(bloecke) {
+    var container = document.getElementById("marktwissen-liste");
+    container.innerHTML = "";
+    if (!bloecke || bloecke.length === 0) {
+      container.innerHTML = '<p class="leer">Noch kein Marktwissen hinterlegt.</p>';
+      return;
+    }
+    bloecke.forEach(function (block) {
+      var titel = document.createElement("h4");
+      titel.textContent = block.titel;
+      container.appendChild(titel);
+      var liste = document.createElement("div");
+      liste.className = "klartext-liste";
+      (block.zeilen || []).forEach(function (zeile) {
+        var div = document.createElement("div");
+        div.className = "klartext-zeile " + (zeile.klasse || "neutral");
+        div.textContent = zeile.text;
+        liste.appendChild(div);
+      });
+      container.appendChild(liste);
+    });
+  }
+
+  // ---------- Lern-Panel (V11: Aus dem Archiv gelernt) ----------
+
+  function renderLernen(lernen) {
+    var hinweis = document.getElementById("lernen-hinweis");
+    var container = document.getElementById("lernen-liste");
+    container.innerHTML = "";
+    var befunde = (lernen && lernen.befunde) || [];
+    if (befunde.length === 0) {
+      var leerFortschritt = lernen && lernen.fortschritt
+        ? "Wissens-Steckbriefe für " + lernen.fortschritt.ticker_mit_wissen + " von " +
+          lernen.fortschritt.ticker_gesamt + " Aktien."
+        : "";
+      hinweis.textContent = leerFortschritt;
+      container.innerHTML = '<p class="leer">Noch nicht genug gemessene Ideen, um daraus zu lernen (mindestens 10 Messungen je Signalart oder Sektor).</p>';
+      return;
+    }
+    var fortschritt = lernen.fortschritt || null;
+    var fortschrittText = fortschritt
+      ? " Wissens-Steckbriefe für " + fortschritt.ticker_mit_wissen + " von " + fortschritt.ticker_gesamt +
+        " Aktien, " + fortschritt.belastbare_befunde + " belastbare Befunde."
+      : "";
+    hinweis.textContent = "Trefferquoten aus " + (lernen.gemessen || 0) + " gemessenen Signalen der letzten " +
+      (lernen.fenster_tage || 90) + " Tage. Befunde unter 30 Messungen sind gedimmt und tragen keinen Handlungs-Hinweis." +
+      fortschrittText;
+    befunde.forEach(function (befund) {
+      var zeile = document.createElement("div");
+      zeile.className = "klartext-zeile " + (befund.klasse || "neutral") + (befund.belastbar ? "" : " nicht-belastbar");
+      zeile.textContent = befund.belastbar ? befund.text : (befund.text + " Dünne Stichprobe, noch kein Urteil.");
+      container.appendChild(zeile);
+    });
+  }
+
   // ---------- Quellen-Fusszeile ----------
 
   function renderQuellen(gesundheit) {
     var container = document.getElementById("quellen-liste");
     container.innerHTML = "";
     gesundheit.forEach(function (q) {
-      var punktFarbe = q.ok ? "#6B7A3F" : "#d9534f";
+      var punktFarbe = q.ok ? "#3c5a1e" : "#b3261e";
       var pausiertIcon = q.pausiert ? " ⏸" : "";
       var zeile = document.createElement("div");
       zeile.className = "quelle-zeile";
@@ -1477,13 +4679,32 @@
     aktuelleDaten = daten;
     renderKopf(daten.stand);
     renderKpis(daten);
-    renderTradeIdeen(daten.events || []);
+    renderAmpel(daten.selbstbefund || []);
+    renderBriefing(daten.briefing || null);
+    renderGesamtlage(daten.gesamtlage || null);
+    renderKiTrades(daten.ki_trades || null);
+    renderHeuteWichtig(daten.heute_wichtig || []);
+    renderRadar(daten.radar || []);
+    renderEmpfehlungen(daten.empfehlungen || []);
+    renderTechnikIdeen(daten.technik_ideen || {});
+    renderPaarIdeen(daten.paar_ideen || []);
+    renderLangfristIdeen(daten.langfrist_ideen || {});
+    renderBeobachten(daten.beobachten || []);
+    renderAktien(daten.aktien || []);
+    renderThemen(daten.themen || []);
+    renderSelbstbefund(daten.selbstbefund || []);
+    renderOffenePositionen(daten.depot || {});
     renderKarte(daten.events || []);
     renderRubriken(daten.rubriken || {});
     renderDepot(daten.depot || {}, daten.equity_verlauf || {});
     renderEreignisse(daten.events || []);
+    aktualisiereEreignisseKopf(daten.neu_anzahl);
     renderTrades(daten.trades || []);
+    renderArchiv(daten.archiv || []);
+    renderLernen(daten.lernen || null);
+    renderMarktwissen(daten.marktwissen || []);
     renderQuellen(daten.gesundheit || []);
+    wendeTabAn();
   }
 
   // ---------- Anmeldung + Auto-Refresh ----------
@@ -1493,8 +4714,10 @@
       return;
     }
     refreshTimer = setInterval(function () {
-      ladeUndEntschluessele(gespeicherterCode).then(function (daten) {
-        renderAlles(daten);
+      ladeUndEntschluessele(gespeicherterCode, true).then(function (daten) {
+        if (daten) {
+          renderAlles(daten);
+        }
         setzeRefreshStatus(true);
       }).catch(function () {
         setzeRefreshStatus(false);
@@ -1545,19 +4768,84 @@
       }
     });
 
-    // Trade-Ideen: Klick/Enter springt zum Event im News-Akkordeon und klappt es auf
-    var tradeIdeenListe = document.getElementById("trade-ideen-liste");
-    tradeIdeenListe.addEventListener("click", function (ereignis) {
-      var karte = ereignis.target.closest(".trade-idee-karte");
+    // Beobachten-Karten: Klick springt zur Aktie in der Tabelle und oeffnet ihr
+    // Analyse-Panel (Task V7.2)
+    document.getElementById("beobachten-liste").addEventListener("click", function (ereignis) {
+      var karte = ereignis.target.closest(".beobachten-karte[data-ticker]");
       if (!karte) { return; }
-      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
+      springeZuAktie(karte.getAttribute("data-ticker"));
     });
-    tradeIdeenListe.addEventListener("keydown", function (ereignis) {
-      if (ereignis.key !== "Enter" && ereignis.key !== " ") { return; }
-      var karte = ereignis.target.closest(".trade-idee-karte");
+
+    // Heute-wichtig-Zeilen: Klick springt zur Aktie in der Tabelle und oeffnet
+    // ihr Analyse-Panel (Task V8.4)
+    document.getElementById("heute-wichtig-liste").addEventListener("click", function (ereignis) {
+      var zeile = ereignis.target.closest(".heute-wichtig-zeile[data-ticker]");
+      if (!zeile) { return; }
+      springeZuAktie(zeile.getAttribute("data-ticker"));
+    });
+
+    // Regionen-Filter: Klick auf einen Chip filtert Tabellenzeilen + Mobil-Karten
+    // (Task V7.2, Nutzer-Wunsch), Zustand bleibt nur im Speicher
+    document.getElementById("region-filter-leiste").addEventListener("click", function (ereignis) {
+      var chip = ereignis.target.closest("[data-region-filter]");
+      if (!chip) { return; }
+      ZUSTAND.regionFilter = chip.getAttribute("data-region-filter");
+      renderRegionFilter(aktuelleDaten ? (aktuelleDaten.aktien || []) : []);
+      wendeRegionFilterAn();
+    });
+
+    // Aktien-Tabelle: Klick auf Spaltenkopf sortiert (Kurs/Tag%/P&L%), zweiter Klick
+    // kehrt die Richtung um
+    document.getElementById("aktien-tabelle-kopfzeile").addEventListener("click", function (ereignis) {
+      var th = ereignis.target.closest("[data-sort]");
+      if (!th) { return; }
+      var feld = th.getAttribute("data-sort");
+      if (AKTIEN_SORT.feld === feld) {
+        AKTIEN_SORT.aufsteigend = !AKTIEN_SORT.aufsteigend;
+      } else {
+        AKTIEN_SORT.feld = feld;
+        AKTIEN_SORT.aufsteigend = false;
+      }
+      if (aktuelleDaten) { renderAktien(aktuelleDaten.aktien || []); }
+    });
+
+    // Aktien-Tabelle: Klick auf eine Zeile (ausser dem Spaltenkopf) klappt das
+    // Analyse-Panel darunter auf/zu (V5.5)
+    document.getElementById("aktien-tabelle-koerper").addEventListener("click", function (ereignis) {
+      var zeile = ereignis.target.closest("tr.aktien-zeile");
+      if (!zeile) { return; }
+      schalteAnalysePanel(zeile.getAttribute("data-ticker"));
+    });
+
+    // Aktien-Karten (Mobil): Klick auf die Karte klappt das Analyse-Panel auf/zu,
+    // Klicks INNERHALB des bereits offenen Panels schliessen es nicht versehentlich
+    document.getElementById("aktien-karten").addEventListener("click", function (ereignis) {
+      if (ereignis.target.closest(".analyse-panel")) { return; }
+      var karte = ereignis.target.closest(".aktien-karte[data-ticker]");
       if (!karte) { return; }
-      ereignis.preventDefault();
-      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
+      schalteAnalysePanel(karte.getAttribute("data-ticker"));
+    });
+
+    // Chart-Interaktion (Zeitrahmen/Zoom/Sliden/Fadenkreuz) in beiden
+    // Containern; delegiert, ueberlebt also jedes Neu-Rendern
+    verdrahteChartInteraktion(document.getElementById("aktien-tabelle-koerper"));
+    verdrahteChartInteraktion(document.getElementById("aktien-karten"));
+
+    // Depot-Rechner (V15): Eingabe-Aenderung rechnet live neu, delegiert
+    ["aktien-tabelle-koerper", "aktien-karten"].forEach(function (id) {
+      document.getElementById(id).addEventListener("input", function (ereignis) {
+        if (!ereignis.target.classList.contains("rechner-risiko")) { return; }
+        var rechner = ereignis.target.closest(".depot-rechner");
+        if (rechner) { aktualisiereDepotRechner(rechner); }
+      });
+    });
+
+    // Bei Groessenaenderung Charts mit neuer Breite nachzeichnen (Achsen-Text
+    // wird nicht skaliert, sondern fuer die echte Breite neu gesetzt)
+    var chartResizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(chartResizeTimer);
+      chartResizeTimer = setTimeout(zeichneAlleChartFlaechen, 200);
     });
 
     // News-Akkordeon: Kopf oeffnet/schliesst, "Auf Karte zeigen" zoomt die Leaflet-Karte
@@ -1597,10 +4885,63 @@
     });
     aktualisiereFilterChips();
 
-    // Klappbare Panels: Karte (offen ab 800px Breite, sonst zu), Rubriken/Trades (zu)
-    kartePanel = initKlappbaresPanel("karte-kopf", "karte-koerper", window.matchMedia("(min-width: 800px)").matches);
+    // Klappbare Panels: alle Default ZU (V3.2 Cockpit-Redesign) -- nur die
+    // Aktien-Tabelle und "Offene Positionen" bleiben ungeklappt sichtbar
+    kartePanel = initKlappbaresPanel("karte-kopf", "karte-koerper", false);
     initKlappbaresPanel("rubriken-kopf", "rubriken-koerper", false);
     initKlappbaresPanel("trades-kopf", "trades-koerper", false);
+    initKlappbaresPanel("archiv-kopf", "archiv-koerper", false);
+    initKlappbaresPanel("lernen-kopf", "lernen-koerper", false);
+    initKlappbaresPanel("marktwissen-kopf", "marktwissen-koerper", false);
+    initKlappbaresPanel("ereignisse-kopf", "ereignisse-koerper", false);
+    initKlappbaresPanel("depot-kopf", "depot-koerper", false);
+    initKlappbaresPanel("quellen-kopf", "quellen-koerper", false);
+    selbstdiagnosePanel = initKlappbaresPanel("selbstdiagnose-kopf", "selbstdiagnose-koerper", false);
+
+    // Selbstdiagnose-Ampel: Klick wechselt in den Wissen-Tab (V16) und
+    // klappt das Selbstdiagnose-Panel auf (kein Umschalten)
+    document.getElementById("selbstdiagnose-ampel").addEventListener("click", function () {
+      schalteTab("wissen", true);
+      selbstdiagnosePanel.setzeOffen(true);
+      document.getElementById("selbstdiagnose").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // Tab-Leiste (V16): Klick wechselt den Bereich
+    document.getElementById("tab-leiste").addEventListener("click", function (ereignis) {
+      var knopf = ereignis.target.closest(".tab-knopf");
+      if (knopf) {
+        schalteTab(knopf.getAttribute("data-tab"));
+      }
+    });
+    wendeTabAn();
+
+    // KI-Trades (V16): Klick auf eine Trade-Zeile klappt die volle
+    // Begruendung auf/zu; Zustand ueberlebt Auto-Refreshs
+    document.getElementById("ki-trades-koerper").addEventListener("click", function (ereignis) {
+      var zeile = ereignis.target.closest("tr.ki-trade-zeile");
+      if (!zeile) { return; }
+      var schluessel = zeile.getAttribute("data-ki-trade");
+      if (ZUSTAND.offeneKiBegruendungen.has(schluessel)) {
+        ZUSTAND.offeneKiBegruendungen.delete(schluessel);
+      } else {
+        ZUSTAND.offeneKiBegruendungen.add(schluessel);
+      }
+      var detail = zeile.nextElementSibling;
+      var offen = ZUSTAND.offeneKiBegruendungen.has(schluessel);
+      if (detail && detail.classList.contains("ki-begruendung-zeile")) {
+        detail.classList.toggle("tab-verborgen", !offen);
+      }
+      var pfeil = zeile.querySelector(".ki-begruendung-pfeil");
+      if (pfeil) { pfeil.textContent = offen ? "▴" : "▾"; }
+    });
+
+    // Themen-Board: Klick auf eine Kachel klappt Themen-Aktien + Themen-News auf
+    document.getElementById("themen-board").addEventListener("click", function (ereignis) {
+      var kopf = ereignis.target.closest(".thema-kopf");
+      if (kopf) {
+        schalteThemaAkkordeon(kopf.getAttribute("data-thema"));
+      }
+    });
 
     var gespeichert = null;
     try {
