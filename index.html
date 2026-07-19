@@ -49,6 +49,9 @@
     padding: 24px;
   }
 
+  #code-schirm[hidden] { display: none !important; }
+  #dashboard[hidden] { display: none !important; }
+
   .code-box {
     width: 100%;
     max-width: 340px;
@@ -191,6 +194,107 @@
   .kpi-nebenwert.positiv { color: var(--accent-hell); }
   .kpi-nebenwert.negativ { color: var(--rot); }
 
+  /* ---------- Aktien-Tabelle (Herzstueck) ---------- */
+
+  #aktien { border: 1px solid var(--accent); }
+
+  .aktien-tabelle-wrapper { display: none; overflow-x: auto; }
+
+  table.aktien-tabelle { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+
+  table.aktien-tabelle th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  table.aktien-tabelle th[data-sort] { cursor: pointer; user-select: none; }
+  table.aktien-tabelle th[data-sort]:hover { color: var(--text); }
+  table.aktien-tabelle th.sortiert-aktiv { color: var(--accent-hell); }
+
+  table.aktien-tabelle td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+
+  tr.zeile-position { border-left: 3px solid var(--accent); background: rgba(107, 122, 63, 0.08); }
+  tr.zeile-beobachtung { opacity: 0.72; }
+
+  .ticker-name { display: block; font-size: 0.72rem; color: var(--text-dim); }
+  .sektor-zelle { color: var(--text-dim); font-size: 0.78rem; }
+  .kurs-gross { font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
+  .tag-veraenderung { font-weight: 600; white-space: nowrap; }
+  .ausloeser-zelle { color: var(--text-dim); font-size: 0.78rem; max-width: 220px; }
+
+  .signal-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .signal-badge.long { background: rgba(107, 122, 63, 0.25); color: var(--accent-hell); }
+  .signal-badge.short { background: rgba(217, 83, 79, 0.2); color: var(--rot); }
+  .signal-badge.beob { background: var(--bg-eingabe); color: var(--text-dim); }
+
+  .staerke-punkte { margin-left: 4px; font-size: 0.7rem; letter-spacing: 1px; color: var(--text-dim); }
+
+  .aktien-karten { display: flex; flex-direction: column; gap: 8px; }
+
+  @media (min-width: 700px) {
+    .aktien-tabelle-wrapper { display: block; }
+    .aktien-karten { display: none; }
+  }
+
+  .aktien-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .aktien-karte.zeile-position { border-left: 3px solid var(--accent); }
+  .aktien-karte.zeile-beobachtung { opacity: 0.72; }
+
+  .aktien-karte-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .aktien-karte-kurs { font-size: 1.35rem; font-weight: 700; }
+  .aktien-karte-tag { font-size: 0.85rem; font-weight: 600; margin-top: 2px; }
+  .aktien-karte-ausloeser { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+
+  /* ---------- Offene Positionen (kompakt) ---------- */
+
+  .offene-positionen-liste { display: flex; flex-direction: column; gap: 8px; }
+
+  .offene-position-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .offene-position-buch {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .offene-position-ticker { min-width: 60px; }
+  .offene-position-kurse { color: var(--text-dim); }
+  .offene-position-stop { color: var(--text-dim); font-size: 0.78rem; margin-left: auto; }
+
   .panel {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -237,39 +341,6 @@
 
   @media (min-width: 800px) {
     #karte { height: 420px; }
-  }
-
-  /* ---------- Trade-Ideen ---------- */
-
-  .trade-ideen-liste {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .trade-idee-karte {
-    background: var(--bg-panel-2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    padding: 10px 12px;
-    cursor: pointer;
-  }
-
-  .trade-idee-karte:hover, .trade-idee-karte:focus-visible {
-    border-color: var(--accent-hell);
-    outline: none;
-  }
-
-  .trade-idee-text { font-weight: 700; margin-bottom: 4px; font-size: 0.9rem; }
-
-  .trade-idee-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    flex-wrap: wrap;
   }
 
   /* ---------- Filterleiste ---------- */
@@ -679,17 +750,17 @@
 
   <div class="kpi-leiste" id="kpi-leiste">
     <div class="kpi-kachel">
-      <span class="kpi-label">Events 24 Std</span>
-      <span class="kpi-wert" id="kpi-events-24h">–</span>
+      <span class="kpi-label">Depot gesamt</span>
+      <span class="kpi-wert" id="kpi-depot-gesamt">–</span>
+      <span class="kpi-nebenwert" id="kpi-depot-pnl">–</span>
+    </div>
+    <div class="kpi-kachel">
+      <span class="kpi-label">Offene Positionen</span>
+      <span class="kpi-wert" id="kpi-offene-positionen">–</span>
     </div>
     <div class="kpi-kachel">
       <span class="kpi-label">Aktive Signale</span>
       <span class="kpi-wert" id="kpi-signale-aktiv">–</span>
-    </div>
-    <div class="kpi-kachel">
-      <span class="kpi-label">Depot gesamt</span>
-      <span class="kpi-wert" id="kpi-depot-gesamt">–</span>
-      <span class="kpi-nebenwert" id="kpi-depot-pnl">–</span>
     </div>
     <div class="kpi-kachel">
       <span class="kpi-label">Quellen grün</span>
@@ -697,25 +768,52 @@
     </div>
   </div>
 
-  <section class="panel" id="trade-ideen">
-    <h2>💡 Trade-Ideen</h2>
-    <div id="trade-ideen-liste" class="trade-ideen-liste"></div>
+  <section class="panel" id="aktien">
+    <h2>📊 Aktien</h2>
+    <div class="aktien-tabelle-wrapper">
+      <table class="aktien-tabelle">
+        <thead>
+          <tr id="aktien-tabelle-kopfzeile">
+            <th>Aktie</th>
+            <th>Sektor</th>
+            <th data-sort="kurs">Kurs</th>
+            <th data-sort="veraenderung_prozent">Tag %</th>
+            <th>Signal</th>
+            <th>Einstand</th>
+            <th data-sort="pnl_prozent">P&amp;L %</th>
+            <th>Auslöser</th>
+          </tr>
+        </thead>
+        <tbody id="aktien-tabelle-koerper"></tbody>
+      </table>
+    </div>
+    <div class="aktien-karten" id="aktien-karten"></div>
+  </section>
+
+  <section class="panel" id="offene-positionen" hidden>
+    <h2>Offene Positionen</h2>
+    <div id="offene-positionen-liste" class="offene-positionen-liste"></div>
   </section>
 
   <section class="panel" id="ereignisse">
-    <h2>📰 News</h2>
-    <div class="filter-leiste" id="filter-leiste">
-      <button type="button" class="filter-chip aktiv" id="filter-schwere-ab4" data-schwere-filter="ab4">Ab Schwere 4</button>
-      <button type="button" class="filter-chip" id="filter-schwere-alle" data-schwere-filter="alle">Alle</button>
-      <span class="filter-trenner" aria-hidden="true"></span>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-naturkatastrophe" data-kategorie="naturkatastrophe">🌋 Naturkatastrophe</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-luftfahrt" data-kategorie="luftfahrt">✈️ Luftfahrt</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-schifffahrt" data-kategorie="schifffahrt">🚢 Schifffahrt</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-geopolitik" data-kategorie="geopolitik">🪖 Geopolitik</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-osint" data-kategorie="osint">📰 OSINT</button>
-      <button type="button" class="filter-chip aktiv" id="filter-kat-ki" data-kategorie="ki">🤖 KI</button>
+    <div class="panel-kopf-klickbar" id="ereignisse-kopf">
+      <h2>📰 News</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
     </div>
-    <div id="ereignis-liste" class="akkordeon-liste"></div>
+    <div class="klappbar-koerper" id="ereignisse-koerper">
+      <div class="filter-leiste" id="filter-leiste">
+        <button type="button" class="filter-chip aktiv" id="filter-schwere-ab4" data-schwere-filter="ab4">Ab Schwere 4</button>
+        <button type="button" class="filter-chip" id="filter-schwere-alle" data-schwere-filter="alle">Alle</button>
+        <span class="filter-trenner" aria-hidden="true"></span>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-naturkatastrophe" data-kategorie="naturkatastrophe">🌋 Naturkatastrophe</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-luftfahrt" data-kategorie="luftfahrt">✈️ Luftfahrt</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-schifffahrt" data-kategorie="schifffahrt">🚢 Schifffahrt</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-geopolitik" data-kategorie="geopolitik">🪖 Geopolitik</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-osint" data-kategorie="osint">📰 OSINT</button>
+        <button type="button" class="filter-chip aktiv" id="filter-kat-ki" data-kategorie="ki">🤖 KI</button>
+      </div>
+      <div id="ereignis-liste" class="akkordeon-liste"></div>
+    </div>
   </section>
 
   <section class="panel" id="karte-panel">
@@ -756,37 +854,42 @@
   </section>
 
   <section class="panel" id="depot">
-    <h2>Depot</h2>
-    <div class="depot-buecher">
-      <div class="depot-buch" data-buch="kurz">
-        <div class="depot-buch-kopf">
-          <h3>Kurzfristig</h3>
-          <span class="handelsstopp-badge" id="handelsstopp-kurz" hidden>Handelsstopp</span>
+    <div class="panel-kopf-klickbar" id="depot-kopf">
+      <h2>Depot-Details</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="depot-koerper">
+      <div class="depot-buecher">
+        <div class="depot-buch" data-buch="kurz">
+          <div class="depot-buch-kopf">
+            <h3>Kurzfristig</h3>
+            <span class="handelsstopp-badge" id="handelsstopp-kurz" hidden>Handelsstopp</span>
+          </div>
+          <div class="depot-kennzahlen">
+            <div>Equity <strong id="equity-kurz">–</strong></div>
+            <div>Bargeld <strong id="bargeld-kurz">–</strong></div>
+          </div>
+          <canvas class="sparkline" id="sparkline-kurz" width="320" height="60"></canvas>
+          <table class="positionen-tabelle">
+            <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+            <tbody id="positionen-kurz"></tbody>
+          </table>
         </div>
-        <div class="depot-kennzahlen">
-          <div>Equity <strong id="equity-kurz">–</strong></div>
-          <div>Bargeld <strong id="bargeld-kurz">–</strong></div>
+        <div class="depot-buch" data-buch="lang">
+          <div class="depot-buch-kopf">
+            <h3>Langfristig</h3>
+            <span class="handelsstopp-badge" id="handelsstopp-lang" hidden>Handelsstopp</span>
+          </div>
+          <div class="depot-kennzahlen">
+            <div>Equity <strong id="equity-lang">–</strong></div>
+            <div>Bargeld <strong id="bargeld-lang">–</strong></div>
+          </div>
+          <canvas class="sparkline" id="sparkline-lang" width="320" height="60"></canvas>
+          <table class="positionen-tabelle">
+            <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+            <tbody id="positionen-lang"></tbody>
+          </table>
         </div>
-        <canvas class="sparkline" id="sparkline-kurz" width="320" height="60"></canvas>
-        <table class="positionen-tabelle">
-          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
-          <tbody id="positionen-kurz"></tbody>
-        </table>
-      </div>
-      <div class="depot-buch" data-buch="lang">
-        <div class="depot-buch-kopf">
-          <h3>Langfristig</h3>
-          <span class="handelsstopp-badge" id="handelsstopp-lang" hidden>Handelsstopp</span>
-        </div>
-        <div class="depot-kennzahlen">
-          <div>Equity <strong id="equity-lang">–</strong></div>
-          <div>Bargeld <strong id="bargeld-lang">–</strong></div>
-        </div>
-        <canvas class="sparkline" id="sparkline-lang" width="320" height="60"></canvas>
-        <table class="positionen-tabelle">
-          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
-          <tbody id="positionen-lang"></tbody>
-        </table>
       </div>
     </div>
   </section>
@@ -802,8 +905,13 @@
   </section>
 
   <footer class="panel" id="quellen">
-    <h2>Quellen</h2>
-    <div id="quellen-liste"></div>
+    <div class="panel-kopf-klickbar" id="quellen-kopf">
+      <h2>Quellen</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="quellen-koerper">
+      <div id="quellen-liste"></div>
+    </div>
   </footer>
 
 </div>
@@ -989,6 +1097,53 @@
     return richtung === "long" ? "▲" : "▼";
   }
 
+  function waehrungKuerzel(ticker) {
+    // Vereinfachte Ableitung aus dem Ticker-Suffix (S. Task-Brief V3.2: "egal, einfach
+    // Zahl + Kuerzel"): kein Punkt im Ticker (z.B. NVDA) -> Dollar, sonst Euro.
+    return ticker && String(ticker).indexOf(".") !== -1 ? "€" : "$";
+  }
+
+  function formatiereKurs(kurs, ticker) {
+    if (typeof kurs !== "number" || isNaN(kurs)) {
+      return "–";
+    }
+    return kurs.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+      " " + waehrungKuerzel(ticker);
+  }
+
+  function formatiereProzentPfeil(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    var pfeil = wert >= 0 ? "▲" : "▼";
+    return pfeil + " " + (wert >= 0 ? "+" : "") + wert.toFixed(2) + " %";
+  }
+
+  function formatiereProzent(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    return (wert >= 0 ? "+" : "") + wert.toFixed(2) + " %";
+  }
+
+  function prozentKlasse(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "";
+    }
+    return wert >= 0 ? "positiv" : "negativ";
+  }
+
+  function kuerzeText(text, maxLaenge) {
+    if (!text) {
+      return "–";
+    }
+    var text2 = String(text);
+    if (text2.length <= maxLaenge) {
+      return text2;
+    }
+    return text2.slice(0, maxLaenge - 1) + "…";
+  }
+
   // ---------- Rendering ----------
 
   function zeigeDashboard() {
@@ -1030,14 +1185,6 @@
   // ---------- KPI-Kopfzeile ----------
 
   function renderKpis(daten) {
-    var events = daten.events || [];
-    var grenze = Date.now() - 24 * 60 * 60 * 1000;
-    var events24h = events.filter(function (ev) {
-      var zeit = new Date(ev.zeit).getTime();
-      return !isNaN(zeit) && zeit >= grenze;
-    }).length;
-    document.getElementById("kpi-events-24h").textContent = String(events24h);
-
     var rubriken = daten.rubriken || {};
     var signaleAktiv = RUBRIKEN_ORDNUNG.reduce(function (summe, schluessel) {
       return summe + ((rubriken[schluessel] || []).length);
@@ -1052,66 +1199,155 @@
     pnlEl.textContent = (pnlProzent >= 0 ? "+" : "") + pnlProzent.toFixed(2) + " %";
     pnlEl.className = "kpi-nebenwert " + (pnlProzent >= 0 ? "positiv" : "negativ");
 
+    var offenePositionen = ((depot.kurz || {}).positionen || []).length +
+      ((depot.lang || {}).positionen || []).length;
+    document.getElementById("kpi-offene-positionen").textContent = String(offenePositionen);
+
     var gesundheit = daten.gesundheit || [];
     var gruen = gesundheit.filter(function (q) { return q.ok; }).length;
     document.getElementById("kpi-quellen-status").textContent = gruen + "/" + gesundheit.length;
   }
 
-  // ---------- Trade-Ideen (ganz oben) ----------
+  // ---------- Aktien-Tabelle (Herzstueck, ganz oben) ----------
 
-  function renderTradeIdeen(events) {
-    var container = document.getElementById("trade-ideen-liste");
-    var mitIdee = events.filter(function (ev) {
-      return ev.trade_idee && ev.trade_idee.length > 0;
-    }).sort(function (a, b) {
-      return b.schwere - a.schwere;
-    }).slice(0, 8);
+  var AKTIEN_SORT = { feld: null, aufsteigend: false };
 
-    container.innerHTML = "";
-    if (mitIdee.length === 0) {
-      container.innerHTML = '<p class="leer">Keine aktuellen Trade-Ideen</p>';
-      return;
+  function sortiereAktien(zeilen) {
+    if (!AKTIEN_SORT.feld) {
+      return zeilen;
     }
-    mitIdee.forEach(function (ev) {
-      var karte = document.createElement("div");
-      karte.className = "trade-idee-karte";
-      karte.setAttribute("data-event-id", String(ev.id));
-      karte.setAttribute("role", "button");
-      karte.setAttribute("tabindex", "0");
-      karte.innerHTML =
-        '<div class="trade-idee-text">' + escapeHtml(ev.trade_idee) + '</div>' +
-        '<div class="trade-idee-meta">' +
-        '<span class="schwere-badge" style="background:' + schwereFarbe(ev.schwere) + '">' + escapeHtml(ev.schwere) + '</span>' +
-        '<span class="trade-idee-titel">' + escapeHtml(ev.titel) + '</span>' +
-        '<span class="trade-idee-zeit">' + escapeHtml(formatiereRelativeZeit(ev.zeit)) + '</span>' +
-        '</div>';
-      container.appendChild(karte);
+    var feld = AKTIEN_SORT.feld;
+    var kopie = zeilen.slice();
+    kopie.sort(function (a, b) {
+      var av = a[feld];
+      var bv = b[feld];
+      var aFehlt = typeof av !== "number" || isNaN(av);
+      var bFehlt = typeof bv !== "number" || isNaN(bv);
+      if (aFehlt && bFehlt) { return 0; }
+      if (aFehlt) { return 1; }
+      if (bFehlt) { return -1; }
+      return AKTIEN_SORT.aufsteigend ? av - bv : bv - av;
+    });
+    return kopie;
+  }
+
+  function aktualisiereSortIndikatoren() {
+    var zeile = document.getElementById("aktien-tabelle-kopfzeile");
+    if (!zeile) { return; }
+    zeile.querySelectorAll("th[data-sort]").forEach(function (th) {
+      var aktiv = th.getAttribute("data-sort") === AKTIEN_SORT.feld;
+      th.classList.toggle("sortiert-aktiv", aktiv);
+      var basis = th.textContent.replace(/\s*[▲▼]$/, "");
+      th.textContent = aktiv ? basis + (AKTIEN_SORT.aufsteigend ? " ▲" : " ▼") : basis;
     });
   }
 
-  function springeZuEreignis(id) {
-    var eintrag = document.getElementById("ereignis-" + id);
-    if (!eintrag) {
-      // Event evtl. durch aktive Filter ausgeblendet: Filter zuruecksetzen, damit
-      // der Sprung aus den Trade-Ideen immer funktioniert.
-      ZUSTAND.schwereFilter = "alle";
-      ZUSTAND.deaktivierteKategorien.clear();
-      aktualisiereFilterChips();
-      if (aktuelleDaten) {
-        renderEreignisse(aktuelleDaten.events || []);
-      }
-      eintrag = document.getElementById("ereignis-" + id);
+  function signalBadgeHtml(zeile) {
+    if (zeile.status === "beobachtung") {
+      return '<span class="signal-badge beob">beob.</span>';
     }
-    if (!eintrag) {
+    var klasse = zeile.richtung === "long" ? "long" : "short";
+    var punkte = zeile.staerke > 0 ? '<span class="staerke-punkte">' +
+      new Array(zeile.staerke + 1).join("●") + '</span>' : "";
+    return '<span class="signal-badge ' + klasse + '">' + richtungText(zeile.richtung) + '</span>' + punkte;
+  }
+
+  function baueAktienZeileHtml(zeile) {
+    return (
+      '<td class="ticker-zelle"><strong>' + escapeHtml(zeile.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(zeile.name) + '</span></td>' +
+      '<td class="sektor-zelle">' + escapeHtml(zeile.sektor) + '</td>' +
+      '<td class="kurs-gross">' + escapeHtml(formatiereKurs(zeile.kurs, zeile.ticker)) + '</td>' +
+      '<td class="tag-veraenderung ' + prozentKlasse(zeile.veraenderung_prozent) + '">' +
+      escapeHtml(formatiereProzentPfeil(zeile.veraenderung_prozent)) + '</td>' +
+      '<td>' + signalBadgeHtml(zeile) + '</td>' +
+      '<td>' + escapeHtml(formatiereKurs(zeile.einstand, zeile.ticker)) + '</td>' +
+      '<td class="' + prozentKlasse(zeile.pnl_prozent) + '">' + escapeHtml(formatiereProzent(zeile.pnl_prozent)) + '</td>' +
+      '<td class="ausloeser-zelle">' + escapeHtml(kuerzeText(zeile.ausloeser, 60)) + '</td>'
+    );
+  }
+
+  function baueAktienKarteHtml(zeile) {
+    return (
+      '<div class="aktien-karte-kopf">' +
+      '<div><strong>' + escapeHtml(zeile.ticker) + '</strong>' +
+      '<span class="ticker-name">' + escapeHtml(zeile.name) + '</span></div>' +
+      signalBadgeHtml(zeile) +
+      '</div>' +
+      '<div class="aktien-karte-kurs">' + escapeHtml(formatiereKurs(zeile.kurs, zeile.ticker)) + '</div>' +
+      '<div class="aktien-karte-tag ' + prozentKlasse(zeile.veraenderung_prozent) + '">' +
+      escapeHtml(formatiereProzentPfeil(zeile.veraenderung_prozent)) + '</div>' +
+      '<div class="aktien-karte-ausloeser">' + escapeHtml(kuerzeText(zeile.ausloeser, 80)) + '</div>'
+    );
+  }
+
+  function renderAktien(aktien) {
+    var tbody = document.getElementById("aktien-tabelle-koerper");
+    var karten = document.getElementById("aktien-karten");
+    var sortiert = sortiereAktien(aktien || []);
+    tbody.innerHTML = "";
+    karten.innerHTML = "";
+
+    if (sortiert.length === 0) {
+      var leerText = "Aktuell keine relevanten Aktien, es gab noch kein passendes Ereignis.";
+      tbody.innerHTML = '<tr><td colspan="8" class="leer">' + leerText + '</td></tr>';
+      karten.innerHTML = '<p class="leer">' + leerText + '</p>';
+      aktualisiereSortIndikatoren();
       return;
     }
-    ZUSTAND.offeneEreignisse.add(id);
-    var kopf = eintrag.querySelector(".akk-kopf");
-    var koerper = eintrag.querySelector(".akk-koerper");
-    kopf.setAttribute("aria-expanded", "true");
-    kopf.classList.add("offen");
-    koerper.style.maxHeight = koerper.scrollHeight + "px";
-    eintrag.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    sortiert.forEach(function (zeile) {
+      var zeilenKlasse = zeile.status === "position" ? "zeile-position" :
+        (zeile.status === "beobachtung" ? "zeile-beobachtung" : "");
+
+      var tr = document.createElement("tr");
+      tr.className = zeilenKlasse;
+      tr.innerHTML = baueAktienZeileHtml(zeile);
+      tbody.appendChild(tr);
+
+      var karte = document.createElement("div");
+      karte.className = "aktien-karte " + zeilenKlasse;
+      karte.innerHTML = baueAktienKarteHtml(zeile);
+      karten.appendChild(karte);
+    });
+
+    aktualisiereSortIndikatoren();
+  }
+
+  // ---------- Offene Positionen (kompakt, unter der Aktien-Tabelle) ----------
+
+  function renderOffenePositionen(depot) {
+    var panel = document.getElementById("offene-positionen");
+    var liste = document.getElementById("offene-positionen-liste");
+    var alle = [];
+    BUECHER.forEach(function (buch) {
+      var buchDaten = (depot && depot[buch]) || {};
+      (buchDaten.positionen || []).forEach(function (pos) {
+        alle.push({ buch: buch, position: pos });
+      });
+    });
+
+    liste.innerHTML = "";
+    if (alle.length === 0) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+
+    alle.forEach(function (eintrag) {
+      var pos = eintrag.position;
+      var zeile = document.createElement("div");
+      zeile.className = "offene-position-zeile";
+      zeile.innerHTML =
+        '<span class="offene-position-buch">' + escapeHtml(BUCH_TITEL[eintrag.buch]) + '</span>' +
+        '<strong class="offene-position-ticker">' + escapeHtml(pos.ticker) + '</strong>' +
+        '<span class="richtung ' + escapeHtml(pos.richtung) + '">' + richtungText(pos.richtung) + '</span>' +
+        '<span class="offene-position-kurse">' + escapeHtml(formatiereKurs(pos.einstand, pos.ticker)) +
+        ' → ' + escapeHtml(formatiereKurs(pos.kurs, pos.ticker)) + '</span>' +
+        '<span class="' + prozentKlasse(pos.pnl_prozent) + '">' + escapeHtml(formatiereProzent(pos.pnl_prozent)) + '</span>' +
+        '<span class="offene-position-stop">Stop ' + escapeHtml(formatiereKurs(pos.stop_kurs, pos.ticker)) + '</span>';
+      liste.appendChild(zeile);
+    });
   }
 
   // ---------- Karte ----------
@@ -1477,7 +1713,8 @@
     aktuelleDaten = daten;
     renderKopf(daten.stand);
     renderKpis(daten);
-    renderTradeIdeen(daten.events || []);
+    renderAktien(daten.aktien || []);
+    renderOffenePositionen(daten.depot || {});
     renderKarte(daten.events || []);
     renderRubriken(daten.rubriken || {});
     renderDepot(daten.depot || {}, daten.equity_verlauf || {});
@@ -1545,19 +1782,19 @@
       }
     });
 
-    // Trade-Ideen: Klick/Enter springt zum Event im News-Akkordeon und klappt es auf
-    var tradeIdeenListe = document.getElementById("trade-ideen-liste");
-    tradeIdeenListe.addEventListener("click", function (ereignis) {
-      var karte = ereignis.target.closest(".trade-idee-karte");
-      if (!karte) { return; }
-      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
-    });
-    tradeIdeenListe.addEventListener("keydown", function (ereignis) {
-      if (ereignis.key !== "Enter" && ereignis.key !== " ") { return; }
-      var karte = ereignis.target.closest(".trade-idee-karte");
-      if (!karte) { return; }
-      ereignis.preventDefault();
-      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
+    // Aktien-Tabelle: Klick auf Spaltenkopf sortiert (Kurs/Tag%/P&L%), zweiter Klick
+    // kehrt die Richtung um
+    document.getElementById("aktien-tabelle-kopfzeile").addEventListener("click", function (ereignis) {
+      var th = ereignis.target.closest("[data-sort]");
+      if (!th) { return; }
+      var feld = th.getAttribute("data-sort");
+      if (AKTIEN_SORT.feld === feld) {
+        AKTIEN_SORT.aufsteigend = !AKTIEN_SORT.aufsteigend;
+      } else {
+        AKTIEN_SORT.feld = feld;
+        AKTIEN_SORT.aufsteigend = false;
+      }
+      if (aktuelleDaten) { renderAktien(aktuelleDaten.aktien || []); }
     });
 
     // News-Akkordeon: Kopf oeffnet/schliesst, "Auf Karte zeigen" zoomt die Leaflet-Karte
@@ -1597,10 +1834,14 @@
     });
     aktualisiereFilterChips();
 
-    // Klappbare Panels: Karte (offen ab 800px Breite, sonst zu), Rubriken/Trades (zu)
-    kartePanel = initKlappbaresPanel("karte-kopf", "karte-koerper", window.matchMedia("(min-width: 800px)").matches);
+    // Klappbare Panels: alle Default ZU (V3.2 Cockpit-Redesign) -- nur die
+    // Aktien-Tabelle und "Offene Positionen" bleiben ungeklappt sichtbar
+    kartePanel = initKlappbaresPanel("karte-kopf", "karte-koerper", false);
     initKlappbaresPanel("rubriken-kopf", "rubriken-koerper", false);
     initKlappbaresPanel("trades-kopf", "trades-koerper", false);
+    initKlappbaresPanel("ereignisse-kopf", "ereignisse-koerper", false);
+    initKlappbaresPanel("depot-kopf", "depot-koerper", false);
+    initKlappbaresPanel("quellen-kopf", "quellen-koerper", false);
 
     var gespeichert = null;
     try {
