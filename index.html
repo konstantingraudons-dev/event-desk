@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Event Trader Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
+<style>
+  :root {
+    --bg: #1A1F22;
+    --bg-panel: #22282b;
+    --bg-panel-2: #262d30;
+    --bg-eingabe: #2b3336;
+    --border: #33393c;
+    --text: #e8e6e1;
+    --text-dim: #9aa39c;
+    --accent: #6B7A3F;
+    --accent-hell: #8aa050;
+    --rot: #d9534f;
+    --orange: #e08a3c;
+    --gelb: #d9c23c;
+    --oliv-grau: #7c8a63;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { margin: 0 0 0.6em 0; font-weight: 600; }
+  h2 { font-size: 1.05rem; color: var(--text); letter-spacing: 0.02em; }
+  h3 { font-size: 0.95rem; color: var(--text-dim); }
+  p { margin: 0.4em 0; }
+  a { color: var(--accent-hell); }
+
+  /* ---------- Code-Eingabe-Schirm ---------- */
+
+  #code-schirm {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .code-box {
+    width: 100%;
+    max-width: 340px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-align: center;
+  }
+
+  .code-box h1 {
+    font-size: 1.3rem;
+    color: var(--accent-hell);
+  }
+
+  .code-box p.unter {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-bottom: 1.2em;
+  }
+
+  #code-eingabe {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-eingabe);
+    color: var(--text);
+    font-size: 1rem;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+
+  #code-eingabe:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #code-knopf {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #code-knopf:hover { background: var(--accent-hell); }
+
+  #code-fehler {
+    color: var(--rot);
+    font-size: 0.9rem;
+    margin-top: 12px;
+  }
+
+  /* ---------- Dashboard-Rahmen ---------- */
+
+  #dashboard {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 12px 12px 40px 12px;
+  }
+
+  .kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px 10px 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .kopf-titel {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent-hell);
+  }
+
+  .kopf-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .status-punkt {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .status-punkt.fehler { background: var(--rot); }
+
+  #refresh-hinweis {
+    background: rgba(217, 83, 79, 0.15);
+    border: 1px solid var(--rot);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin: 0 4px 14px 4px;
+  }
+
+  /* ---------- KPI-Kopfzeile ---------- */
+
+  .kpi-leiste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 4px 14px 4px;
+  }
+
+  .kpi-kachel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 110px;
+    flex: 1 1 130px;
+  }
+
+  .kpi-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+  }
+
+  .kpi-wert { display: block; font-size: 1.1rem; font-weight: 700; }
+  .kpi-nebenwert { font-size: 0.78rem; font-weight: 600; color: var(--text-dim); }
+  .kpi-nebenwert.positiv { color: var(--accent-hell); }
+  .kpi-nebenwert.negativ { color: var(--rot); }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .leer { color: var(--text-dim); font-size: 0.85rem; }
+
+  /* ---------- Klappbare Panel-Koepfe (Karte / Rubriken / Trades) ---------- */
+
+  .panel-kopf-klickbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .panel-kopf-klickbar h2 { margin: 0; }
+
+  .panel-kopf-klickbar .akk-pfeil {
+    color: var(--text-dim);
+    transition: transform 0.2s ease;
+  }
+
+  .panel-kopf-klickbar.offen .akk-pfeil { transform: rotate(180deg); }
+
+  .klappbar-koerper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  /* ---------- Karte ---------- */
+
+  #karte {
+    height: 320px;
+    border-radius: 8px;
+    background: #10161a;
+    margin-top: 12px;
+  }
+
+  @media (min-width: 800px) {
+    #karte { height: 420px; }
+  }
+
+  /* ---------- Trade-Ideen ---------- */
+
+  .trade-ideen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .trade-idee-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .trade-idee-karte:hover, .trade-idee-karte:focus-visible {
+    border-color: var(--accent-hell);
+    outline: none;
+  }
+
+  .trade-idee-text { font-weight: 700; margin-bottom: 4px; font-size: 0.9rem; }
+
+  .trade-idee-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+  }
+
+  /* ---------- Filterleiste ---------- */
+
+  .filter-leiste {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .filter-chip {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .filter-chip.aktiv {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .filter-trenner {
+    width: 1px;
+    align-self: stretch;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* ---------- News-Akkordeon ---------- */
+
+  .akkordeon-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .akk-eintrag {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .akk-kopf {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+  }
+
+  .akk-kopf .ereignis-titel { flex: 1 1 auto; min-width: 120px; }
+
+  .akk-kopf .akk-pfeil {
+    color: var(--text-dim);
+    transition: transform 0.2s ease;
+    flex: 0 0 auto;
+  }
+
+  .akk-kopf.offen .akk-pfeil { transform: rotate(180deg); }
+
+  .akk-koerper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+
+  .akk-inhalt {
+    padding: 4px 14px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .detail-zeile { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+
+  .detail-label {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    min-width: 90px;
+  }
+
+  .confidence-leiste-wrapper { display: flex; align-items: center; gap: 8px; }
+
+  .confidence-leiste {
+    flex: 1 1 auto;
+    height: 6px;
+    background: var(--bg-eingabe);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fuellung { height: 100%; background: var(--accent); }
+  .confidence-text { font-size: 0.78rem; color: var(--text-dim); }
+
+  .quellen-chips, .beeinflusst-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .quelle-chip {
+    background: var(--bg-eingabe);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .beeinflusst-chip {
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .beeinflusst-chip.long { background: rgba(107, 122, 63, 0.25); color: var(--accent-hell); }
+  .beeinflusst-chip.short { background: rgba(217, 83, 79, 0.2); color: var(--rot); }
+  .beeinflusst-chip.neutral { background: var(--bg-eingabe); color: var(--text-dim); }
+
+  .trade-idee-box {
+    border-left: 3px solid var(--accent);
+    background: var(--bg-eingabe);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  .trade-idee-box-text { font-weight: 600; }
+
+  .karte-link { display: inline-block; font-size: 0.78rem; }
+
+  .signale-mini-tabelle { margin-top: 2px; }
+
+  /* ---------- Rubriken-Board ---------- */
+
+  .rubriken-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  @media (min-width: 800px) {
+    .rubriken-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+  }
+
+  .rubrik-spalte h3 {
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rubrik-karten {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .signal-karte {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .signal-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .richtung {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .richtung.long { background: rgba(107, 122, 63, 0.25); color: var(--accent-hell); }
+  .richtung.short { background: rgba(217, 83, 79, 0.2); color: var(--rot); }
+
+  .staerke { color: var(--text-dim); font-size: 0.78rem; margin-bottom: 4px; }
+  .begruendung { color: var(--text); font-size: 0.82rem; line-height: 1.35; }
+
+  /* ---------- Depot ---------- */
+
+  .depot-buecher {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  @media (min-width: 800px) {
+    .depot-buecher { flex-direction: row; }
+    .depot-buch { flex: 1; }
+  }
+
+  .depot-buch {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .depot-buch-kopf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .handelsstopp-badge {
+    background: rgba(217, 83, 79, 0.2);
+    color: var(--rot);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+
+  .depot-kennzahlen {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .depot-kennzahlen strong { color: var(--text); font-size: 0.95rem; display: block; }
+
+  canvas.sparkline {
+    width: 100%;
+    height: 60px;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  table.positionen-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  table.positionen-tabelle th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.positionen-tabelle td {
+    padding: 5px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .positiv { color: var(--accent-hell); font-weight: 600; }
+  .negativ { color: var(--rot); font-weight: 600; }
+
+  /* ---------- Trades ---------- */
+
+  #trades-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .trade-eintrag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .kategorie-emoji { font-size: 1.05rem; }
+
+  .schwere-badge {
+    color: #191c14;
+    font-weight: 700;
+    font-size: 0.75rem;
+    min-width: 22px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .ereignis-titel { font-weight: 500; flex: 1 1 auto; min-width: 140px; }
+  .ereignis-zeit-relativ, .trade-zeit, .trade-grund { color: var(--text-dim); font-size: 0.78rem; }
+
+  .trade-aktion {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(107, 122, 63, 0.25);
+    color: var(--accent-hell);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Quellen-Fusszeile ---------- */
+
+  #quellen-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .quelle-zeile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .quelle-name { flex: 1 1 auto; }
+  .quelle-zuletzt { color: var(--text-dim); font-size: 0.78rem; }
+
+  .apple-toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #454d50;
+    flex: 0 0 auto;
+    cursor: default;
+    transition: background 0.15s ease;
+  }
+
+  .apple-toggle.an { background: var(--accent); }
+
+  .apple-toggle-kugel {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    transition: left 0.15s ease;
+  }
+
+  .apple-toggle.an .apple-toggle-kugel { left: 18px; }
+
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: #22282b;
+    color: #e8e6e1;
+  }
+</style>
+</head>
+<body>
+
+<div id="code-schirm">
+  <div class="code-box">
+    <h1>Event Trader</h1>
+    <p class="unter">Zugangscode eingeben, um das Dashboard zu entsperren.</p>
+    <input type="password" id="code-eingabe" placeholder="Zugangscode" autocomplete="off" inputmode="text">
+    <button id="code-knopf" type="button">Entsperren</button>
+    <p id="code-fehler" hidden></p>
+  </div>
+</div>
+
+<div id="dashboard" hidden>
+
+  <header class="kopf">
+    <div class="kopf-titel">Event Trader</div>
+    <div class="kopf-status">
+      <span id="refresh-punkt" class="status-punkt" title="Auto-Aktualisierung, alle 60 Sekunden"></span>
+      <span id="stand-zeit">Stand: –</span>
+    </div>
+  </header>
+
+  <div id="refresh-hinweis" hidden>Aktualisierung fehlgeschlagen, letzter bekannter Stand wird weiter angezeigt.</div>
+
+  <div class="kpi-leiste" id="kpi-leiste">
+    <div class="kpi-kachel">
+      <span class="kpi-label">Events 24 Std</span>
+      <span class="kpi-wert" id="kpi-events-24h">–</span>
+    </div>
+    <div class="kpi-kachel">
+      <span class="kpi-label">Aktive Signale</span>
+      <span class="kpi-wert" id="kpi-signale-aktiv">–</span>
+    </div>
+    <div class="kpi-kachel">
+      <span class="kpi-label">Depot gesamt</span>
+      <span class="kpi-wert" id="kpi-depot-gesamt">–</span>
+      <span class="kpi-nebenwert" id="kpi-depot-pnl">–</span>
+    </div>
+    <div class="kpi-kachel">
+      <span class="kpi-label">Quellen grün</span>
+      <span class="kpi-wert" id="kpi-quellen-status">–</span>
+    </div>
+  </div>
+
+  <section class="panel" id="trade-ideen">
+    <h2>💡 Trade-Ideen</h2>
+    <div id="trade-ideen-liste" class="trade-ideen-liste"></div>
+  </section>
+
+  <section class="panel" id="ereignisse">
+    <h2>📰 News</h2>
+    <div class="filter-leiste" id="filter-leiste">
+      <button type="button" class="filter-chip aktiv" id="filter-schwere-ab4" data-schwere-filter="ab4">Ab Schwere 4</button>
+      <button type="button" class="filter-chip" id="filter-schwere-alle" data-schwere-filter="alle">Alle</button>
+      <span class="filter-trenner" aria-hidden="true"></span>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-naturkatastrophe" data-kategorie="naturkatastrophe">🌋 Naturkatastrophe</button>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-luftfahrt" data-kategorie="luftfahrt">✈️ Luftfahrt</button>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-schifffahrt" data-kategorie="schifffahrt">🚢 Schifffahrt</button>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-geopolitik" data-kategorie="geopolitik">🪖 Geopolitik</button>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-osint" data-kategorie="osint">📰 OSINT</button>
+      <button type="button" class="filter-chip aktiv" id="filter-kat-ki" data-kategorie="ki">🤖 KI</button>
+    </div>
+    <div id="ereignis-liste" class="akkordeon-liste"></div>
+  </section>
+
+  <section class="panel" id="karte-panel">
+    <div class="panel-kopf-klickbar" id="karte-kopf">
+      <h2>Weltkarte</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="karte-koerper">
+      <div id="karte"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="rubriken">
+    <div class="panel-kopf-klickbar" id="rubriken-kopf">
+      <h2>Rubriken</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="rubriken-koerper">
+      <div class="rubriken-grid">
+        <div class="rubrik-spalte" data-rubrik="kurzfristig_steigend">
+          <h3>📈 Kurzfristig steigend</h3>
+          <div class="rubrik-karten" id="rubrik-kurzfristig_steigend"></div>
+        </div>
+        <div class="rubrik-spalte" data-rubrik="kurzfristig_fallend">
+          <h3>📉 Kurzfristig fallend</h3>
+          <div class="rubrik-karten" id="rubrik-kurzfristig_fallend"></div>
+        </div>
+        <div class="rubrik-spalte" data-rubrik="langfristig_steigend">
+          <h3>📈 Langfristig steigend</h3>
+          <div class="rubrik-karten" id="rubrik-langfristig_steigend"></div>
+        </div>
+        <div class="rubrik-spalte" data-rubrik="langfristig_fallend">
+          <h3>📉 Langfristig fallend</h3>
+          <div class="rubrik-karten" id="rubrik-langfristig_fallend"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="depot">
+    <h2>Depot</h2>
+    <div class="depot-buecher">
+      <div class="depot-buch" data-buch="kurz">
+        <div class="depot-buch-kopf">
+          <h3>Kurzfristig</h3>
+          <span class="handelsstopp-badge" id="handelsstopp-kurz" hidden>Handelsstopp</span>
+        </div>
+        <div class="depot-kennzahlen">
+          <div>Equity <strong id="equity-kurz">–</strong></div>
+          <div>Bargeld <strong id="bargeld-kurz">–</strong></div>
+        </div>
+        <canvas class="sparkline" id="sparkline-kurz" width="320" height="60"></canvas>
+        <table class="positionen-tabelle">
+          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+          <tbody id="positionen-kurz"></tbody>
+        </table>
+      </div>
+      <div class="depot-buch" data-buch="lang">
+        <div class="depot-buch-kopf">
+          <h3>Langfristig</h3>
+          <span class="handelsstopp-badge" id="handelsstopp-lang" hidden>Handelsstopp</span>
+        </div>
+        <div class="depot-kennzahlen">
+          <div>Equity <strong id="equity-lang">–</strong></div>
+          <div>Bargeld <strong id="bargeld-lang">–</strong></div>
+        </div>
+        <canvas class="sparkline" id="sparkline-lang" width="320" height="60"></canvas>
+        <table class="positionen-tabelle">
+          <thead><tr><th>Ticker</th><th>Richtung</th><th>Einstand</th><th>Kurs</th><th>P&amp;L</th></tr></thead>
+          <tbody id="positionen-lang"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="trades">
+    <div class="panel-kopf-klickbar" id="trades-kopf">
+      <h2>Trades</h2>
+      <span class="akk-pfeil" aria-hidden="true">▾</span>
+    </div>
+    <div class="klappbar-koerper" id="trades-koerper">
+      <ul id="trades-liste"></ul>
+    </div>
+  </section>
+
+  <footer class="panel" id="quellen">
+    <h2>Quellen</h2>
+    <div id="quellen-liste"></div>
+  </footer>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+<script>
+/*
+ * WebCrypto-Parameter fuer daten.enc (bindend, muss exakt zu publisher/krypto.py passen):
+ *   Paketformat: Magic "EVTR1" (5 Byte, Index 0-4) + Salt (16 Byte, Index 5-21)
+ *                + Nonce (12 Byte, Index 21-33) + Ciphertext inkl. GCM-Tag (ab Index 33)
+ *   Schluesselableitung: PBKDF2-HMAC-SHA256 aus dem Zugangscode, 200000 Iterationen, 32 Byte (256 Bit)
+ *   Verschluesselung: AES-256-GCM, IV = Nonce (12 Byte), kein AAD
+ *   Klartext: UTF-8-JSON (siehe data.json-Struktur in .superpowers/sdd/s5-constraints.md)
+ */
+
+(function () {
+  "use strict";
+
+  var MAGIC = [0x45, 0x56, 0x54, 0x52, 0x31]; // "EVTR1"
+  var ITERATIONEN = 200000;
+  var SESSION_KEY = "et_zugangscode";
+  var AUTO_REFRESH_MS = 60000;
+
+  var KATEGORIE_EMOJI = {
+    naturkatastrophe: "🌋",
+    luftfahrt: "✈️",
+    schifffahrt: "🚢",
+    geopolitik: "🪖",
+    osint: "📰",
+    ki: "🤖"
+  };
+
+  var RUBRIKEN_ORDNUNG = [
+    "kurzfristig_steigend",
+    "kurzfristig_fallend",
+    "langfristig_steigend",
+    "langfristig_fallend"
+  ];
+
+  var BUECHER = ["kurz", "lang"];
+  var BUCH_TITEL = { kurz: "Kurzfristig", lang: "Langfristig" };
+
+  var DEPOT_BASIS_GESAMT = 100000;
+
+  var gespeicherterCode = null;
+  var refreshTimer = null;
+  var karteInstanz = null;
+  var markerLayer = null;
+  var kartePanel = null;
+  var aktuelleDaten = null;
+
+  // Ansichts-Zustand des Akkordeons/Filters, bleibt ueber Auto-Refreshs erhalten
+  var ZUSTAND = {
+    offeneEreignisse: new Set(),
+    schwereFilter: "ab4",
+    deaktivierteKategorien: new Set()
+  };
+
+  // ---------- WebCrypto: Entschluesselung nach bindendem Paketformat ----------
+
+  function leiteSchluesselAb(code, salt) {
+    var codeBytes = new TextEncoder().encode(code);
+    return crypto.subtle.importKey("raw", codeBytes, { name: "PBKDF2" }, false, ["deriveKey"])
+      .then(function (basisSchluessel) {
+        return crypto.subtle.deriveKey(
+          { name: "PBKDF2", salt: salt, iterations: ITERATIONEN, hash: "SHA-256" },
+          basisSchluessel,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["decrypt"]
+        );
+      });
+  }
+
+  function pruefeMagic(bytes) {
+    for (var i = 0; i < MAGIC.length; i++) {
+      if (bytes[i] !== MAGIC[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function entschluesselePaket(paket, code) {
+    var bytes = new Uint8Array(paket);
+    if (bytes.length < 33) {
+      return Promise.reject(new Error("Paket zu kurz"));
+    }
+    if (!pruefeMagic(bytes)) {
+      return Promise.reject(new Error("unbekannte Magic"));
+    }
+    var salt = bytes.slice(5, 21);
+    var nonce = bytes.slice(21, 33);
+    var ciphertext = bytes.slice(33);
+    return leiteSchluesselAb(code, salt).then(function (schluessel) {
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce }, schluessel, ciphertext);
+    }).then(function (klartextBuffer) {
+      return new TextDecoder("utf-8").decode(klartextBuffer);
+    });
+  }
+
+  function ladeUndEntschluessele(code) {
+    return fetch("daten.enc?t=" + Date.now(), { cache: "no-store" }).then(function (antwort) {
+      if (!antwort.ok) {
+        throw new Error("daten.enc nicht erreichbar (" + antwort.status + ")");
+      }
+      return antwort.arrayBuffer();
+    }).then(function (paket) {
+      return entschluesselePaket(paket, code);
+    }).then(function (klartext) {
+      return JSON.parse(klartext);
+    });
+  }
+
+  // ---------- Hilfsfunktionen ----------
+
+  function escapeHtml(wert) {
+    if (wert === null || wert === undefined) {
+      return "";
+    }
+    return String(wert).replace(/[&<>"']/g, function (zeichen) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[zeichen];
+    });
+  }
+
+  function formatiereEuro(wert) {
+    if (typeof wert !== "number" || isNaN(wert)) {
+      return "–";
+    }
+    return wert.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  }
+
+  function formatiereZeit(iso) {
+    if (!iso) {
+      return "";
+    }
+    var datum = new Date(iso);
+    if (isNaN(datum.getTime())) {
+      return String(iso);
+    }
+    return datum.toLocaleString("de-DE", { timeZone: "Europe/Berlin", dateStyle: "short", timeStyle: "short" });
+  }
+
+  function formatiereRelativeZeit(iso) {
+    if (!iso) {
+      return "";
+    }
+    var datum = new Date(iso);
+    if (isNaN(datum.getTime())) {
+      return "";
+    }
+    var diffMin = Math.round((Date.now() - datum.getTime()) / 60000);
+    if (diffMin < 1) {
+      return "gerade eben";
+    }
+    if (diffMin < 60) {
+      return "vor " + diffMin + " Min";
+    }
+    var diffStd = Math.round(diffMin / 60);
+    if (diffStd < 24) {
+      return "vor " + diffStd + " Std";
+    }
+    var diffTage = Math.round(diffStd / 24);
+    return "vor " + diffTage + " " + (diffTage === 1 ? "Tag" : "Tagen");
+  }
+
+  function kategorieEmoji(kategorie) {
+    return KATEGORIE_EMOJI[kategorie] || "❗";
+  }
+
+  function schwereFarbe(schwere) {
+    if (schwere >= 8) { return "#d9534f"; }
+    if (schwere >= 6) { return "#e08a3c"; }
+    if (schwere >= 4) { return "#d9c23c"; }
+    return "#7c8a63";
+  }
+
+  function richtungText(richtung) {
+    return richtung === "long" ? "Long" : "Short";
+  }
+
+  function richtungPfeil(richtung) {
+    return richtung === "long" ? "▲" : "▼";
+  }
+
+  // ---------- Rendering ----------
+
+  function zeigeDashboard() {
+    document.getElementById("code-schirm").hidden = true;
+    document.getElementById("dashboard").hidden = false;
+  }
+
+  function zeigeFehler(text) {
+    var el = document.getElementById("code-fehler");
+    el.textContent = text;
+    el.hidden = false;
+  }
+
+  function verbirgFehler() {
+    document.getElementById("code-fehler").hidden = true;
+  }
+
+  function setzeRefreshStatus(erfolgreich) {
+    var punkt = document.getElementById("refresh-punkt");
+    var hinweis = document.getElementById("refresh-hinweis");
+    if (erfolgreich) {
+      punkt.classList.remove("fehler");
+      hinweis.hidden = true;
+    } else {
+      punkt.classList.add("fehler");
+      hinweis.hidden = false;
+    }
+  }
+
+  function renderKopf(stand) {
+    var el = document.getElementById("stand-zeit");
+    if (!stand) {
+      el.textContent = "Stand: unbekannt";
+      return;
+    }
+    el.textContent = "Stand: " + formatiereZeit(stand);
+  }
+
+  // ---------- KPI-Kopfzeile ----------
+
+  function renderKpis(daten) {
+    var events = daten.events || [];
+    var grenze = Date.now() - 24 * 60 * 60 * 1000;
+    var events24h = events.filter(function (ev) {
+      var zeit = new Date(ev.zeit).getTime();
+      return !isNaN(zeit) && zeit >= grenze;
+    }).length;
+    document.getElementById("kpi-events-24h").textContent = String(events24h);
+
+    var rubriken = daten.rubriken || {};
+    var signaleAktiv = RUBRIKEN_ORDNUNG.reduce(function (summe, schluessel) {
+      return summe + ((rubriken[schluessel] || []).length);
+    }, 0);
+    document.getElementById("kpi-signale-aktiv").textContent = String(signaleAktiv);
+
+    var depot = daten.depot || {};
+    var gesamt = ((depot.kurz || {}).equity || 0) + ((depot.lang || {}).equity || 0);
+    var pnlProzent = ((gesamt - DEPOT_BASIS_GESAMT) / DEPOT_BASIS_GESAMT) * 100;
+    document.getElementById("kpi-depot-gesamt").textContent = formatiereEuro(gesamt);
+    var pnlEl = document.getElementById("kpi-depot-pnl");
+    pnlEl.textContent = (pnlProzent >= 0 ? "+" : "") + pnlProzent.toFixed(2) + " %";
+    pnlEl.className = "kpi-nebenwert " + (pnlProzent >= 0 ? "positiv" : "negativ");
+
+    var gesundheit = daten.gesundheit || [];
+    var gruen = gesundheit.filter(function (q) { return q.ok; }).length;
+    document.getElementById("kpi-quellen-status").textContent = gruen + "/" + gesundheit.length;
+  }
+
+  // ---------- Trade-Ideen (ganz oben) ----------
+
+  function renderTradeIdeen(events) {
+    var container = document.getElementById("trade-ideen-liste");
+    var mitIdee = events.filter(function (ev) {
+      return ev.trade_idee && ev.trade_idee.length > 0;
+    }).sort(function (a, b) {
+      return b.schwere - a.schwere;
+    }).slice(0, 8);
+
+    container.innerHTML = "";
+    if (mitIdee.length === 0) {
+      container.innerHTML = '<p class="leer">Keine aktuellen Trade-Ideen</p>';
+      return;
+    }
+    mitIdee.forEach(function (ev) {
+      var karte = document.createElement("div");
+      karte.className = "trade-idee-karte";
+      karte.setAttribute("data-event-id", String(ev.id));
+      karte.setAttribute("role", "button");
+      karte.setAttribute("tabindex", "0");
+      karte.innerHTML =
+        '<div class="trade-idee-text">' + escapeHtml(ev.trade_idee) + '</div>' +
+        '<div class="trade-idee-meta">' +
+        '<span class="schwere-badge" style="background:' + schwereFarbe(ev.schwere) + '">' + escapeHtml(ev.schwere) + '</span>' +
+        '<span class="trade-idee-titel">' + escapeHtml(ev.titel) + '</span>' +
+        '<span class="trade-idee-zeit">' + escapeHtml(formatiereRelativeZeit(ev.zeit)) + '</span>' +
+        '</div>';
+      container.appendChild(karte);
+    });
+  }
+
+  function springeZuEreignis(id) {
+    var eintrag = document.getElementById("ereignis-" + id);
+    if (!eintrag) {
+      // Event evtl. durch aktive Filter ausgeblendet: Filter zuruecksetzen, damit
+      // der Sprung aus den Trade-Ideen immer funktioniert.
+      ZUSTAND.schwereFilter = "alle";
+      ZUSTAND.deaktivierteKategorien.clear();
+      aktualisiereFilterChips();
+      if (aktuelleDaten) {
+        renderEreignisse(aktuelleDaten.events || []);
+      }
+      eintrag = document.getElementById("ereignis-" + id);
+    }
+    if (!eintrag) {
+      return;
+    }
+    ZUSTAND.offeneEreignisse.add(id);
+    var kopf = eintrag.querySelector(".akk-kopf");
+    var koerper = eintrag.querySelector(".akk-koerper");
+    kopf.setAttribute("aria-expanded", "true");
+    kopf.classList.add("offen");
+    koerper.style.maxHeight = koerper.scrollHeight + "px";
+    eintrag.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // ---------- Karte ----------
+
+  function initKarteFallsNoetig() {
+    if (karteInstanz) {
+      return;
+    }
+    karteInstanz = L.map("karte", { worldCopyJump: true }).setView([20, 10], 2);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap, &copy; CARTO',
+      subdomains: "abcd",
+      maxZoom: 19
+    }).addTo(karteInstanz);
+    markerLayer = L.layerGroup().addTo(karteInstanz);
+  }
+
+  function renderKarte(events) {
+    initKarteFallsNoetig();
+    markerLayer.clearLayers();
+    events.forEach(function (ev) {
+      if (ev.lat === null || ev.lat === undefined || ev.lon === null || ev.lon === undefined) {
+        return;
+      }
+      var farbe = schwereFarbe(ev.schwere);
+      var marker = L.circleMarker([ev.lat, ev.lon], {
+        radius: 8,
+        color: farbe,
+        fillColor: farbe,
+        fillOpacity: 0.85,
+        weight: 1
+      });
+      var quellen = (ev.quellen || []).map(function (q) {
+        return typeof q === "string" ? q : (q.quelle || "");
+      }).join(", ");
+      var sicherheit = typeof ev.confidence === "number" ? Math.round(ev.confidence * 100) + " %" : "unbekannt";
+      marker.bindPopup(
+        "<strong>" + escapeHtml(ev.titel) + "</strong><br>" +
+        "Quellen: " + escapeHtml(quellen) + "<br>" +
+        "Sicherheit: " + escapeHtml(sicherheit)
+      );
+      marker.addTo(markerLayer);
+    });
+  }
+
+  function zeigeAufKarte(lat, lon) {
+    if (isNaN(lat) || isNaN(lon)) {
+      return;
+    }
+    initKarteFallsNoetig();
+    if (kartePanel && !kartePanel.istOffen()) {
+      kartePanel.setzeOffen(true);
+    }
+    setTimeout(function () {
+      karteInstanz.invalidateSize();
+      karteInstanz.setView([lat, lon], 6);
+    }, 300);
+  }
+
+  // ---------- Rubriken ----------
+
+  function renderRubriken(rubriken) {
+    RUBRIKEN_ORDNUNG.forEach(function (schluessel) {
+      var container = document.getElementById("rubrik-" + schluessel);
+      var signale = (rubriken && rubriken[schluessel]) || [];
+      container.innerHTML = "";
+      if (signale.length === 0) {
+        container.innerHTML = '<p class="leer">Keine aktiven Signale</p>';
+        return;
+      }
+      signale.forEach(function (sig) {
+        var karte = document.createElement("div");
+        karte.className = "signal-karte";
+        karte.innerHTML =
+          '<div class="signal-kopf"><strong>' + escapeHtml(sig.ticker) + '</strong>' +
+          '<span class="richtung ' + escapeHtml(sig.richtung) + '">' + richtungText(sig.richtung) + '</span></div>' +
+          '<div class="staerke">Stärke: ' + escapeHtml(sig.staerke) + '</div>' +
+          '<div class="begruendung">' + escapeHtml(sig.begruendung) + '</div>';
+        container.appendChild(karte);
+      });
+    });
+  }
+
+  // ---------- Depot ----------
+
+  function zeichneSparkline(canvas, verlauf) {
+    var ctx = canvas.getContext("2d");
+    var breite = canvas.width;
+    var hoehe = canvas.height;
+    ctx.clearRect(0, 0, breite, hoehe);
+    if (!verlauf || verlauf.length < 2) {
+      return;
+    }
+    var werte = verlauf.map(function (punkt) { return punkt[1]; });
+    var min = Math.min.apply(null, werte);
+    var max = Math.max.apply(null, werte);
+    var spanne = (max - min) || 1;
+    ctx.beginPath();
+    verlauf.forEach(function (punkt, i) {
+      var x = (i / (verlauf.length - 1)) * (breite - 4) + 2;
+      var y = hoehe - 2 - ((punkt[1] - min) / spanne) * (hoehe - 4);
+      if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+    });
+    ctx.strokeStyle = "#6B7A3F";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function renderDepot(depot, verlauf) {
+    BUECHER.forEach(function (buch) {
+      var buchDaten = (depot && depot[buch]) || {};
+      document.getElementById("equity-" + buch).textContent = formatiereEuro(buchDaten.equity);
+      document.getElementById("bargeld-" + buch).textContent = formatiereEuro(buchDaten.bargeld);
+      document.getElementById("handelsstopp-" + buch).hidden = !buchDaten.handelsstopp;
+
+      var tbody = document.getElementById("positionen-" + buch);
+      tbody.innerHTML = "";
+      (buchDaten.positionen || []).forEach(function (pos) {
+        var pnl = typeof pos.pnl_prozent === "number" ? pos.pnl_prozent : 0;
+        var pnlKlasse = pnl >= 0 ? "positiv" : "negativ";
+        var pnlText = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " %";
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          "<td>" + escapeHtml(pos.ticker) + "</td>" +
+          "<td>" + richtungText(pos.richtung) + "</td>" +
+          "<td>" + formatiereEuro(pos.einstand) + "</td>" +
+          "<td>" + formatiereEuro(pos.kurs) + "</td>" +
+          '<td class="' + pnlKlasse + '">' + pnlText + "</td>";
+        tbody.appendChild(tr);
+      });
+
+      var canvas = document.getElementById("sparkline-" + buch);
+      zeichneSparkline(canvas, (verlauf && verlauf[buch]) || []);
+    });
+  }
+
+  // ---------- News-Akkordeon ----------
+
+  function baueQuellenChips(quellen) {
+    return (quellen || []).map(function (q) {
+      if (typeof q === "string") {
+        return '<span class="quelle-chip">' + escapeHtml(q) + '</span>';
+      }
+      var zeitTeil = q.zeit ? " · " + escapeHtml(formatiereZeit(q.zeit)) : "";
+      return '<span class="quelle-chip">' + escapeHtml(q.quelle || "") + zeitTeil + '</span>';
+    }).join("");
+  }
+
+  function beeinflusstText(eintrag) {
+    return eintrag.sektor ? eintrag.sektor : (eintrag.ticker || "");
+  }
+
+  function baueBeeinflusstChips(beeinflusst) {
+    if (!beeinflusst || beeinflusst.length === 0) {
+      return '<span class="leer">Keine Einschätzung</span>';
+    }
+    return beeinflusst.map(function (eintrag) {
+      if (eintrag.richtung) {
+        var klasse = eintrag.richtung === "long" ? "long" : "short";
+        return '<span class="beeinflusst-chip ' + klasse + '">' +
+          richtungPfeil(eintrag.richtung) + ' ' + escapeHtml(beeinflusstText(eintrag)) + '</span>';
+      }
+      return '<span class="beeinflusst-chip neutral">' + escapeHtml(beeinflusstText(eintrag)) + '</span>';
+    }).join("");
+  }
+
+  function baueSignaleTabelle(signale) {
+    if (!signale || signale.length === 0) {
+      return "";
+    }
+    var zeilen = signale.map(function (sig) {
+      return "<tr><td>" + escapeHtml(sig.ticker) + "</td>" +
+        '<td class="richtung ' + escapeHtml(sig.richtung) + '">' + richtungText(sig.richtung) + "</td>" +
+        "<td>" + escapeHtml(sig.staerke) + "</td>" +
+        "<td>" + escapeHtml(sig.halte_tage) + " Tage</td></tr>";
+    }).join("");
+    return '<table class="positionen-tabelle signale-mini-tabelle">' +
+      "<thead><tr><th>Ticker</th><th>Richtung</th><th>Stärke</th><th>Haltedauer</th></tr></thead>" +
+      "<tbody>" + zeilen + "</tbody></table>";
+  }
+
+  function baueAkkordeonEintragHtml(ev) {
+    var confidencePct = typeof ev.confidence === "number" ? Math.round(ev.confidence * 100) : 0;
+    var hatGeo = ev.lat !== null && ev.lat !== undefined && ev.lon !== null && ev.lon !== undefined;
+    var geoText = hatGeo ? escapeHtml(ev.lat) + ", " + escapeHtml(ev.lon) : "unbekannt";
+    var tradeIdeeText = ev.trade_idee && ev.trade_idee.length > 0 ? escapeHtml(ev.trade_idee) : "Keine, nur Beobachtung";
+
+    var kopfHtml =
+      '<button type="button" class="akk-kopf" data-event-id="' + escapeHtml(ev.id) + '" aria-expanded="false">' +
+      '<span class="kategorie-emoji">' + kategorieEmoji(ev.kategorie) + '</span>' +
+      '<span class="ereignis-titel">' + escapeHtml(ev.titel) + '</span>' +
+      '<span class="schwere-badge" style="background:' + schwereFarbe(ev.schwere) + '">' + escapeHtml(ev.schwere) + '</span>' +
+      '<span class="ereignis-zeit-relativ">' + escapeHtml(formatiereRelativeZeit(ev.zeit)) + '</span>' +
+      '<span class="akk-pfeil" aria-hidden="true">▾</span>' +
+      '</button>';
+
+    var karteLinkHtml = hatGeo
+      ? '<a href="#" class="karte-link" data-lat="' + escapeHtml(ev.lat) + '" data-lon="' + escapeHtml(ev.lon) + '">Auf Karte zeigen</a>'
+      : "";
+
+    var koerperHtml =
+      '<div class="akk-koerper" id="ereignis-' + escapeHtml(ev.id) + '-koerper">' +
+      '<div class="akk-inhalt">' +
+      '<div class="detail-zeile"><span class="detail-label">Region</span><span>' +
+      escapeHtml(ev.region || "unbekannt") + ' (' + geoText + ')</span></div>' +
+      '<div class="confidence-leiste-wrapper"><span class="detail-label">Konfidenz</span>' +
+      '<div class="confidence-leiste"><div class="confidence-fuellung" style="width:' + confidencePct + '%"></div></div>' +
+      '<span class="confidence-text">' + confidencePct + ' %</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Status</span><span>' + escapeHtml(ev.status) + '</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Quellen</span>' +
+      '<span class="quellen-chips">' + baueQuellenChips(ev.quellen) + '</span></div>' +
+      '<div class="detail-zeile"><span class="detail-label">Könnte beeinflussen</span>' +
+      '<span class="beeinflusst-chips">' + baueBeeinflusstChips(ev.beeinflusst) + '</span></div>' +
+      '<div class="trade-idee-box"><span class="detail-label">Trade-Idee</span>' +
+      '<div class="trade-idee-box-text">' + tradeIdeeText + '</div></div>' +
+      baueSignaleTabelle(ev.signale) +
+      karteLinkHtml +
+      '</div></div>';
+
+    return kopfHtml + koerperHtml;
+  }
+
+  function gefilterteEreignisse(events) {
+    return events.filter(function (ev) {
+      if (ZUSTAND.schwereFilter === "ab4" && !(ev.schwere >= 4)) {
+        return false;
+      }
+      if (ZUSTAND.deaktivierteKategorien.has(ev.kategorie)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function renderEreignisse(alleEvents) {
+    var liste = document.getElementById("ereignis-liste");
+    var gefiltert = gefilterteEreignisse(alleEvents || []);
+    liste.innerHTML = "";
+    if (gefiltert.length === 0) {
+      liste.innerHTML = '<p class="leer">Keine Ereignisse für die aktuelle Filterauswahl</p>';
+      return;
+    }
+    gefiltert.forEach(function (ev) {
+      var eintrag = document.createElement("div");
+      eintrag.className = "akk-eintrag";
+      eintrag.id = "ereignis-" + ev.id;
+      eintrag.innerHTML = baueAkkordeonEintragHtml(ev);
+      liste.appendChild(eintrag);
+
+      var offen = ZUSTAND.offeneEreignisse.has(ev.id);
+      var kopf = eintrag.querySelector(".akk-kopf");
+      var koerper = eintrag.querySelector(".akk-koerper");
+      kopf.setAttribute("aria-expanded", offen ? "true" : "false");
+      kopf.classList.toggle("offen", offen);
+      koerper.style.maxHeight = offen ? (koerper.scrollHeight + "px") : "0px";
+    });
+  }
+
+  function schalteEreignisAkkordeon(id) {
+    var eintrag = document.getElementById("ereignis-" + id);
+    if (!eintrag) {
+      return;
+    }
+    var kopf = eintrag.querySelector(".akk-kopf");
+    var koerper = eintrag.querySelector(".akk-koerper");
+    var offenNeu = !ZUSTAND.offeneEreignisse.has(id);
+    if (offenNeu) {
+      ZUSTAND.offeneEreignisse.add(id);
+    } else {
+      ZUSTAND.offeneEreignisse.delete(id);
+    }
+    kopf.setAttribute("aria-expanded", offenNeu ? "true" : "false");
+    kopf.classList.toggle("offen", offenNeu);
+    koerper.style.maxHeight = offenNeu ? (koerper.scrollHeight + "px") : "0px";
+  }
+
+  // ---------- Filterleiste ----------
+
+  function aktualisiereFilterChips() {
+    document.getElementById("filter-schwere-ab4").classList.toggle("aktiv", ZUSTAND.schwereFilter === "ab4");
+    document.getElementById("filter-schwere-alle").classList.toggle("aktiv", ZUSTAND.schwereFilter === "alle");
+    Object.keys(KATEGORIE_EMOJI).forEach(function (kategorie) {
+      var chip = document.getElementById("filter-kat-" + kategorie);
+      if (chip) {
+        chip.classList.toggle("aktiv", !ZUSTAND.deaktivierteKategorien.has(kategorie));
+      }
+    });
+  }
+
+  // ---------- Trades ----------
+
+  function renderTrades(trades) {
+    var liste = document.getElementById("trades-liste");
+    liste.innerHTML = "";
+    trades.forEach(function (t) {
+      var li = document.createElement("li");
+      li.className = "trade-eintrag";
+      li.innerHTML =
+        '<span class="trade-aktion">' + escapeHtml(t.aktion) + '</span>' +
+        '<span>' + escapeHtml(t.buch) + '</span>' +
+        '<strong>' + escapeHtml(t.ticker) + '</strong>' +
+        '<span>' + richtungText(t.richtung) + '</span>' +
+        '<span>' + formatiereEuro(t.kurs) + '</span>' +
+        '<span class="trade-grund">' + escapeHtml(t.grund || "") + '</span>' +
+        '<span class="trade-zeit">' + formatiereZeit(t.zeit) + '</span>';
+      liste.appendChild(li);
+    });
+  }
+
+  // ---------- Quellen-Fusszeile ----------
+
+  function renderQuellen(gesundheit) {
+    var container = document.getElementById("quellen-liste");
+    container.innerHTML = "";
+    gesundheit.forEach(function (q) {
+      var punktFarbe = q.ok ? "#6B7A3F" : "#d9534f";
+      var pausiertIcon = q.pausiert ? " ⏸" : "";
+      var zeile = document.createElement("div");
+      zeile.className = "quelle-zeile";
+      zeile.innerHTML =
+        '<span class="status-punkt" style="background:' + punktFarbe + '"></span>' +
+        '<span class="quelle-name">' + escapeHtml(q.quelle) + pausiertIcon + '</span>' +
+        '<span class="apple-toggle ' + (q.pausiert ? "aus" : "an") + '" ' +
+        'title="Schalten per Telegram /quelle ' + escapeHtml(q.quelle) + ' an|aus">' +
+        '<span class="apple-toggle-kugel"></span></span>' +
+        '<span class="quelle-zuletzt">' + formatiereZeit(q.zuletzt) + '</span>';
+      container.appendChild(zeile);
+    });
+  }
+
+  // ---------- Klappbare Panels (Karte / Rubriken / Trades) ----------
+
+  function initKlappbaresPanel(kopfId, koerperId, startOffen) {
+    var kopf = document.getElementById(kopfId);
+    var koerper = document.getElementById(koerperId);
+    var offen = startOffen;
+
+    function anwenden() {
+      kopf.setAttribute("aria-expanded", offen ? "true" : "false");
+      kopf.classList.toggle("offen", offen);
+      koerper.style.maxHeight = offen ? (koerper.scrollHeight + "px") : "0px";
+    }
+
+    kopf.addEventListener("click", function () {
+      offen = !offen;
+      anwenden();
+      if (offen && koerperId === "karte-koerper" && karteInstanz) {
+        setTimeout(function () { karteInstanz.invalidateSize(); }, 310);
+      }
+    });
+
+    anwenden();
+
+    return {
+      istOffen: function () { return offen; },
+      setzeOffen: function (wert) { offen = wert; anwenden(); }
+    };
+  }
+
+  // ---------- Gesamt-Rendering ----------
+
+  function renderAlles(daten) {
+    aktuelleDaten = daten;
+    renderKopf(daten.stand);
+    renderKpis(daten);
+    renderTradeIdeen(daten.events || []);
+    renderKarte(daten.events || []);
+    renderRubriken(daten.rubriken || {});
+    renderDepot(daten.depot || {}, daten.equity_verlauf || {});
+    renderEreignisse(daten.events || []);
+    renderTrades(daten.trades || []);
+    renderQuellen(daten.gesundheit || []);
+  }
+
+  // ---------- Anmeldung + Auto-Refresh ----------
+
+  function starteAutoRefresh() {
+    if (refreshTimer) {
+      return;
+    }
+    refreshTimer = setInterval(function () {
+      ladeUndEntschluessele(gespeicherterCode).then(function (daten) {
+        renderAlles(daten);
+        setzeRefreshStatus(true);
+      }).catch(function () {
+        setzeRefreshStatus(false);
+      });
+    }, AUTO_REFRESH_MS);
+  }
+
+  function anmelden(code, istAutoLogin) {
+    return ladeUndEntschluessele(code).then(function (daten) {
+      gespeicherterCode = code;
+      try {
+        sessionStorage.setItem(SESSION_KEY, code);
+      } catch (ignoriert) {
+        // sessionStorage nicht verfuegbar (z.B. privater Modus) - Sitzung bleibt trotzdem nutzbar
+      }
+      verbirgFehler();
+      zeigeDashboard();
+      renderAlles(daten);
+      setzeRefreshStatus(true);
+      starteAutoRefresh();
+    }).catch(function () {
+      if (istAutoLogin) {
+        try {
+          sessionStorage.removeItem(SESSION_KEY);
+        } catch (ignoriert) {
+          // ignorieren
+        }
+      } else {
+        zeigeFehler("Falscher Code");
+      }
+    });
+  }
+
+  function pruefeCode() {
+    var eingabe = document.getElementById("code-eingabe");
+    var code = eingabe.value;
+    if (!code) {
+      return;
+    }
+    anmelden(code, false);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("code-knopf").addEventListener("click", pruefeCode);
+    document.getElementById("code-eingabe").addEventListener("keydown", function (ereignis) {
+      if (ereignis.key === "Enter") {
+        pruefeCode();
+      }
+    });
+
+    // Trade-Ideen: Klick/Enter springt zum Event im News-Akkordeon und klappt es auf
+    var tradeIdeenListe = document.getElementById("trade-ideen-liste");
+    tradeIdeenListe.addEventListener("click", function (ereignis) {
+      var karte = ereignis.target.closest(".trade-idee-karte");
+      if (!karte) { return; }
+      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
+    });
+    tradeIdeenListe.addEventListener("keydown", function (ereignis) {
+      if (ereignis.key !== "Enter" && ereignis.key !== " ") { return; }
+      var karte = ereignis.target.closest(".trade-idee-karte");
+      if (!karte) { return; }
+      ereignis.preventDefault();
+      springeZuEreignis(Number(karte.getAttribute("data-event-id")));
+    });
+
+    // News-Akkordeon: Kopf oeffnet/schliesst, "Auf Karte zeigen" zoomt die Leaflet-Karte
+    document.getElementById("ereignis-liste").addEventListener("click", function (ereignis) {
+      var kopf = ereignis.target.closest(".akk-kopf");
+      if (kopf) {
+        schalteEreignisAkkordeon(Number(kopf.getAttribute("data-event-id")));
+        return;
+      }
+      var karteLink = ereignis.target.closest(".karte-link");
+      if (karteLink) {
+        ereignis.preventDefault();
+        zeigeAufKarte(Number(karteLink.getAttribute("data-lat")), Number(karteLink.getAttribute("data-lon")));
+      }
+    });
+
+    // Filterleiste: Schwere-Modus + Kategorien an/abwaehlbar
+    document.getElementById("filter-leiste").addEventListener("click", function (ereignis) {
+      var schwereChip = ereignis.target.closest("[data-schwere-filter]");
+      if (schwereChip) {
+        ZUSTAND.schwereFilter = schwereChip.getAttribute("data-schwere-filter");
+        aktualisiereFilterChips();
+        if (aktuelleDaten) { renderEreignisse(aktuelleDaten.events || []); }
+        return;
+      }
+      var katChip = ereignis.target.closest("[data-kategorie]");
+      if (katChip) {
+        var kategorie = katChip.getAttribute("data-kategorie");
+        if (ZUSTAND.deaktivierteKategorien.has(kategorie)) {
+          ZUSTAND.deaktivierteKategorien.delete(kategorie);
+        } else {
+          ZUSTAND.deaktivierteKategorien.add(kategorie);
+        }
+        aktualisiereFilterChips();
+        if (aktuelleDaten) { renderEreignisse(aktuelleDaten.events || []); }
+      }
+    });
+    aktualisiereFilterChips();
+
+    // Klappbare Panels: Karte (offen ab 800px Breite, sonst zu), Rubriken/Trades (zu)
+    kartePanel = initKlappbaresPanel("karte-kopf", "karte-koerper", window.matchMedia("(min-width: 800px)").matches);
+    initKlappbaresPanel("rubriken-kopf", "rubriken-koerper", false);
+    initKlappbaresPanel("trades-kopf", "trades-koerper", false);
+
+    var gespeichert = null;
+    try {
+      gespeichert = sessionStorage.getItem(SESSION_KEY);
+    } catch (ignoriert) {
+      gespeichert = null;
+    }
+    if (gespeichert) {
+      anmelden(gespeichert, true);
+    }
+  });
+})();
+</script>
+</body>
+</html>
